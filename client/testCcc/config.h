@@ -1,0 +1,14 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define CHARARRAY_LENGTH 1024
+
+/* User logins */
+#define CREATE_USER_SUCCESS 0
+#define CREATE_USER_EXIST_ERROR 1
+#define CREATE_USER_NOTEXIST_PROGRAM_ERROR 2
+#define LOGIN_USER_SUCCESS 0
+#define LOGIN_USER_FAIL 1
+
+
+#endif // CONFIG_H
