@@ -1,9 +1,7 @@
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QtWin>
 #include <QPicture>
 #include <windows.h>
-#include "newprogram.h"
 #include <QDebug>
 #include <QTimer>
 

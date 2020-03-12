@@ -24,6 +24,7 @@ SOURCES += \
 HEADERS += \
     config.h \
     loginview.h \
+    message.h \
     reader.h \
     videoview.h \
     writer.h

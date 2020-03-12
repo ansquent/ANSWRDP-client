@@ -1,13 +1,12 @@
-#ifndef DATABASE_H
+﻿#ifndef DATABASE_H
 #define DATABASE_H
 
 #include <map>
 #include <windows.h>
-#include "newprogram.h"
-#include <thread>
+#include "programhandler.h"
 #include <QMutex>
 #include <QString>
-#include "configs.h"
+#include "config.h"
 
 class Database {
 private:
@@ -19,7 +18,7 @@ public:
     int login(const QString & username,
                const QString & password){
         this_mutex.lock();
-        bool result = LOGIN_USER_FAIL;
+        int result = LOGIN_USER_FAIL;
         if (username_password.find(username) != username_password.end() &&
             username_password[username] == password){
             result = LOGIN_USER_SUCCESS;

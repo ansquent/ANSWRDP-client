@@ -1,18 +1,43 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <iostream>
-#include <thread>
 #include <string>
 #include <QDebug>
+#include <list>
+#include <string>
+#include <QThread>
+#include "programhandler.h"
 
 LONG waitTime = 30;
 LONG sleepTime = 1000;
+
+std::list<LPWSTR> desktopnames;
+static LPWSTR createNewDesktopName(){
+    LPWSTR newStr = new WCHAR[100];
+    if (desktopnames.empty()){
+        wcscpy(newStr, L"a");
+        desktopnames.push_back(newStr);
+    }
+    else {
+        wcscpy(newStr, desktopnames.back());
+        for (int i = 0; newStr[i]; ++i){
+            if (newStr[i] < 'z'){
+                newStr[i] = newStr[i] + 1;
+                desktopnames.push_back(newStr);
+                return newStr;
+            }
+        }
+        wcscat(newStr, L"a");
+        desktopnames.push_back(newStr);
+    }
+    return desktopnames.back();
+}
 
 typedef struct {
     DWORD willTID;
     HWND willhwnd;
 }LPM_ENUM;
 
-BOOL CALLBACK EnumChildProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
+static BOOL CALLBACK EnumChildProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
 {
     DWORD pid = 0;
     DWORD tid = GetWindowThreadProcessId(hwnd, &pid);
@@ -29,14 +54,13 @@ BOOL CALLBACK EnumChildProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
     return TRUE;
 }
 
-
-BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
     DWORD pid = 0;
     DWORD tid = GetWindowThreadProcessId(hwnd, &pid);
     //printf("father: %d\n", tid);
     if (tid == ((LPM_ENUM *)lParam)->willTID) {
-        RECT rect = {0};
+        RECT rect = {0, 0, 0, 0};
         GetWindowRect(hwnd, &rect);
         if (rect.left < rect.right){
             ((LPM_ENUM*)lParam)->willhwnd = hwnd;
@@ -46,15 +70,16 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
     EnumChildWindows(hwnd, EnumChildProc, lParam);
     return TRUE;
 }
+
 // 通过进程ID获取窗口句柄
-HWND GetWindowHwndByPID(PROCESS_INFORMATION pi)
+static HWND GetWindowHwndByPID(PROCESS_INFORMATION pi, HDESK hdesk)
 {
     LPM_ENUM lpm;
     lpm.willTID = pi.dwThreadId;
     lpm.willhwnd = NULL;
     DWORD timer = 0;
     while (timer++ < waitTime) {
-        EnumWindows(EnumWindowsProc, (LPARAM)&lpm);
+        EnumDesktopWindows(hdesk, EnumWindowsProc, (LPARAM)&lpm);
         if (lpm.willhwnd != NULL) {
             return lpm.willhwnd;
         }
@@ -66,18 +91,17 @@ HWND GetWindowHwndByPID(PROCESS_INFORMATION pi)
 }
 
 HWND openNewProgram(WCHAR * programname) {
-    //StartInteractiveClientProcess(username, NULL, password, program);
-    //*hDesk = CreateDesktop(desktopname, NULL, NULL, DF_ALLOWOTHERACCOUNTHOOK, GENERIC_ALL, NULL);
-    HANDLE hProcess = 0;
+    LPWSTR desktopname = createNewDesktopName();
+    DWORD mythreadID = GetCurrentThreadId();
+    HDESK myDesk = GetThreadDesktop(mythreadID);
+    HDESK hdesk = CreateDesktop(desktopname, NULL, NULL, DF_ALLOWOTHERACCOUNTHOOK, GENERIC_ALL, NULL);
+
     STARTUPINFO si;
     ZeroMemory(&si, sizeof(si));
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(STARTUPINFO);
     //si.lpDesktop = desktopname; //注意这里
-
-    //DWORD mythreadID = GetCurrentThreadId();
-    //HDESK myDesk = GetThreadDesktop(mythreadID);
 
     if( !CreateProcess( NULL,   // No module name (use command line)
             programname,        // Command line
@@ -92,22 +116,30 @@ HWND openNewProgram(WCHAR * programname) {
         )
         return 0;
     Sleep(sleepTime);
-    HWND hwnd;
+    HWND hwnd = GetWindowHwndByPID(pi, myDesk);
 
-    //SetThreadDesktop(*hDesk);
-    //SwitchDesktop(*hDesk);
-    hwnd = GetWindowHwndByPID(pi);
-    //SavePrintWindowToFile(hwnd);
-    //SetThreadDesktop(myDesk); //显示原桌面
-    //SwitchDesktop(myDesk);
-    //getWindowRect(hwnd);
-    qDebug() << "success\n";
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
     return hwnd;
 }
 
-void closeNewProgram(HDESK hDesk) {
-    CloseDesktop(hDesk);
-    CloseHandle(hDesk);
+void translateToScreenPoint(HWND hwnd, int *x, int *y,
+                                                int cx_screen, int cy_screen){
+    POINT screen_coords;
+    screen_coords.x = *x, screen_coords.y = *y;
+    ClientToScreen(hwnd, &screen_coords);
+    *x = 65535 * screen_coords.x / cx_screen;
+    *y = 65535 * screen_coords.y / cy_screen;
+}
+
+BOOL bringWindowToTop(HWND hWnd)
+{
+    HWND hFrgWnd = GetForegroundWindow();
+    AttachThreadInput( GetWindowThreadProcessId(hFrgWnd, NULL), GetCurrentThreadId(), TRUE );
+    SetForegroundWindow(hWnd);
+    BringWindowToTop(hWnd);
+    SwitchToThisWindow(hWnd, TRUE);
+    AttachThreadInput(GetWindowThreadProcessId(hFrgWnd, NULL),
+        GetCurrentThreadId(), FALSE);
+    return TRUE;
 }

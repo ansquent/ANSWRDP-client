@@ -1,7 +1,7 @@
-#include "server.h"
+﻿#include "server.h"
 #include <QTcpServer>
 #include "mysocket.h"
-#include "configs.h"
+#include "config.h"
 #include <QThread>
 #include "imagesender.h"
 #include "reader.h"
@@ -20,8 +20,10 @@ Server::Server(){
     }
 }
 
-inline void Server::sendState(MySocket * socket, int state){
-    writeNow(socket->getMySocket(), state);
+void Server::sendState(MySocket * socket, int state){
+    QByteArray data;
+    addToQByteArray(state, data);
+    writeNow(socket->getMySocket(), data);
 }
 
 void Server::checkReg(const QByteArray & bytes, MySocket * socket){
@@ -30,9 +32,7 @@ void Server::checkReg(const QByteArray & bytes, MySocket * socket){
     QString username(reads[0]),
             password(reads[1]),
             programname(reads[2]);
-    qDebug() << "Before\n";
     int result = db.createUser(username, password, programname);
-    qDebug() << "register " << result << " \n";
     sendState(socket, result);
 }
 
@@ -54,7 +54,6 @@ void Server::disconnectUserData(){
 
 void Server::startUserServer(){
     MySocket * socket = new MySocket(userServer->nextPendingConnection());
-    //qDebug() << "Connect user\n";
 
     connect(socket->getMySocket(), SIGNAL(readyRead()), socket, SLOT(doSLOTReadyRead()));
     connect(socket->getMySocket(), SIGNAL(disconnected()), socket, SLOT(doSLOTDisconnect()));
@@ -64,7 +63,10 @@ void Server::startUserServer(){
 }
 
 void Server::startImageServer(){
-    ImageSender * sender = new ImageSender(this, new MySocket(imageServer->nextPendingConnection()), db);
+    ImageSender * sender = new ImageSender(this,
+                                           new MySocket(imageServer->nextPendingConnection()),
+                                           &imagerActiveMutex,
+                                           &db);
     sender->start();
 }
 

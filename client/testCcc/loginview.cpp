@@ -1,4 +1,4 @@
-#include "loginview.h"
+﻿#include "loginview.h"
 #include "ui_loginview.h"
 #include <QTcpSocket>
 #include <QMessageBox>
@@ -29,24 +29,23 @@ Loginview::~Loginview()
 
 void Loginview::checkReg(const QByteArray & result){
     if (result.at(0) == CREATE_USER_SUCCESS){
-        QMessageBox::information(this,"消息","注册成功！",QMessageBox::Yes);
+        QMessageBox::information(this,"Message","Success",QMessageBox::Yes);
     }
     else {
-        QMessageBox::information(this,"消息","注册失败！",QMessageBox::Yes);
+        QMessageBox::information(this,"Message","Failed",QMessageBox::Yes);
     }
 }
 
 void Loginview::checkLogin(const QByteArray & result){
     if (result.at(0) == LOGIN_USER_SUCCESS){
-        QMessageBox::information(this,"消息","登录成功！",QMessageBox::Yes);
+        QMessageBox::information(this,"Message","Success",QMessageBox::Yes);
         disconnect(socket, SIGNAL(readyRead()), this, SLOT(readLoginSocketData()));
         Videoview * viewer = new Videoview(nullptr, socket, this);
-        qDebug() << (void *)this << "\n";
         viewer->show();
         this->setEnabled(false);
     }
     else {
-        QMessageBox::information(this,"消息","登录失败！",QMessageBox::Yes);
+        QMessageBox::information(this,"Message","Failed",QMessageBox::Yes);
     }
 }
 

@@ -1,4 +1,4 @@
-QT       += core gui winextras network
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -10,7 +10,7 @@ CONFIG += c++11
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-LIBS += -lgdi32
+LIBS = -lgdi32
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -22,20 +22,21 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mysocket.cpp \
-    newprogram.cpp \
+    programhandler.cpp \
     server.cpp
 
 HEADERS += \
-    configs.h \
+    config.h \
     database.h \
     imagesender.h \
     mainwindow.h \
+    message.h \
     mysocket.h \
-    newprogram.h \
     reader.h \
     server.h \
     userinfo.h \
-    writer.h
+    writer.h \
+    programhandler.h
 
 FORMS += \
     mainwindow.ui

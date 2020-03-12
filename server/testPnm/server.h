@@ -1,4 +1,4 @@
-#ifndef SERVER_H
+﻿#ifndef SERVER_H
 #define SERVER_H
 
 #include <QTcpServer>
@@ -20,6 +20,7 @@ private:
     QTcpServer *imageServer, *userServer;
     std::list<Userinfo> connectedUsers;
     Database db;
+    QMutex imagerActiveMutex;
 public slots:
     void startUserServer();
     void startImageServer();
