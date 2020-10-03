@@ -1,0 +1,30 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define CHARARRAY_LENGTH 1024
+
+/* User logins */
+#define CREATE_USER_SUCCESS 0
+#define CREATE_USER_FAIL 1
+#define OPEN_PROGRAM_FAIL 2
+#define LOGIN_USER_SUCCESS 3
+#define LOGIN_USER_FAIL 4
+#define NO_COMMAND 5
+
+/* Messages */
+#define KEYDOWNEVENT 3
+#define KEYUPEVENT 4
+#define MOUSEPRESSEVENT 5
+#define MOUSERIGHTPRESSEVENT 6
+#define MOUSEMIDDLEPRESSEVENT 7
+#define MOUSEMOVEEVENT 8
+#define MOUSESCROLLEVENT 9
+#define MOUSERELEASEEVENT 10
+#define MOUSERIGHTRELEASEEVENT 11
+#define MOUSEMIDDLERELEASEEVENT 12
+
+#define ScrollUp 0
+#define ScrollDown -1
+
+
+#endif // CONFIG_H
