@@ -1,3 +1,5 @@
+#ifndef RDESKTOP_H
+#define RDESKTOP_H
 /*
    rdesktop: A Remote Desktop Protocol client.
    Master include file
@@ -44,4 +46,6 @@
 
 #ifndef MAKE_PROTO
 #include "proto.h"
+#endif
+
 #endif

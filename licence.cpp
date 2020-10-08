@@ -19,7 +19,7 @@
 */
 
 #include "rdesktop.h"
-
+#define WITH_OPENSSL
 #ifdef WITH_OPENSSL
 #include <openssl/rc4.h>
 #else

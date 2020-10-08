@@ -1,3 +1,5 @@
+#ifndef TYPES_H
+#define TYPES_H
 /*
    rdesktop: A Remote Desktop Protocol client.
    Common data types
@@ -108,3 +110,5 @@ typedef struct _key_translation
 	uint16 modifiers;
 }
 key_translation;
+
+#endif

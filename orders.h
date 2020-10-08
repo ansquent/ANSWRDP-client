@@ -1,3 +1,5 @@
+#ifndef ORDERS_H
+#define ORDERS_H
 /*
    rdesktop: A Remote Desktop Protocol client.
    RDP order processing
@@ -284,3 +286,5 @@ typedef struct _RDP_COLCACHE_ORDER
 
 }
 RDP_COLCACHE_ORDER;
+
+#endif

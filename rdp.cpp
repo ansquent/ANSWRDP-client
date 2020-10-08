@@ -579,7 +579,7 @@ process_bitmap_updates(STREAM s)
 		if (!compress)
 		{
 			int y;
-			bmpdata = xmalloc(width * height);
+			bmpdata = (uint8 *)xmalloc(width * height);
 			for (y = 0; y < height; y++)
 			{
 				in_uint8a(s, &bmpdata[(height - y - 1) * width], width);
@@ -594,7 +594,7 @@ process_bitmap_updates(STREAM s)
 		in_uint8s(s, 4);	/* line_size, final_size */
 		in_uint8p(s, data, size);
 
-		bmpdata = xmalloc(width * height);
+		bmpdata = (uint8 *)xmalloc(width * height);
 		if (bitmap_decompress(bmpdata, width, height, data, size))
 		{
 			ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
@@ -617,7 +617,7 @@ process_palette(STREAM s)
 	in_uint16_le(s, map.ncolours);
 	in_uint8s(s, 2);	/* pad */
 
-	map.colours = xmalloc(3 * map.ncolours);
+	map.colours = (COLOURENTRY *)xmalloc(3 * map.ncolours);
 
 	for (i = 0; i < map.ncolours; i++)
 	{

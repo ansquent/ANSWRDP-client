@@ -1,4 +1,6 @@
 
+#ifndef SCANCODES_H
+#define SCANCODES_H
 /* Two defines for every scancode:
    One called SCANCODE_KEY_<num>, where <num> is the key location number. 
    One called SCANCODE_CHAR_<char-on-us-kbd>, where <char-on-us-kbd> is the 
@@ -374,3 +376,5 @@
 #define SCANCODE_CHAR_ACPISLEEP (SCANCODE_EXTENDED | 0x5f)
 
 #define SCANCODE_CHAR_ACPIWAKE (SCANCODE_EXTENDED | 0x63)
+
+#endif

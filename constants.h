@@ -1,3 +1,5 @@
+#ifndef CONSTANT_H
+#define CONSTANT_H
 /*
    rdesktop: A Remote Desktop Protocol client.
    Miscellaneous protocol constants
@@ -257,3 +259,5 @@ enum RDP_INPUT_DEVICE
 #define MASK_REMOVE_BITS(var, mask) (var &= ~mask)
 #define MASK_HAS_BITS(var, mask) ((var & mask)>0)
 #define MASK_CHANGE_BIT(var, mask, active) (var = ((var & ~mask) | (active ? mask : 0)))
+
+#endif

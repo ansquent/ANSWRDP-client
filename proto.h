@@ -1,3 +1,5 @@
+#ifndef PROTO_H
+#define PROTO_H
 /* bitmap.c */
 BOOL bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input,
 		       int size);
@@ -118,3 +120,5 @@ void ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y, int clipx,
 		  int fgcolour, uint8 * text, uint8 length);
 void ui_desktop_save(uint32 offset, int x, int y, int cx, int cy);
 void ui_desktop_restore(uint32 offset, int x, int y, int cx, int cy);
+
+#endif

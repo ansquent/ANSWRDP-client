@@ -1,3 +1,5 @@
+#ifndef PARSE_H
+#define PARSE_H
 /*
    rdesktop: A Remote Desktop Protocol client.
    Parsing primitives
@@ -91,3 +93,5 @@ typedef struct stream
 #define out_uint8p(s,v,n)	{ memcpy((s)->p,v,n); (s)->p += n; }
 #define out_uint8a(s,v,n)	out_uint8p(s,v,n);
 #define out_uint8s(s,n)		{ memset((s)->p,0,n); (s)->p += n; }
+
+#endif

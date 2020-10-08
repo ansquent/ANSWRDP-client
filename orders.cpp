@@ -634,7 +634,7 @@ process_raw_bmpcache(STREAM s)
 	in_uint8p(s, data, bufsize);
 
 	DEBUG(("RAW_BMPCACHE(cx=%d,cy=%d,id=%d,idx=%d)\n", width, height, cache_id, cache_idx));
-	inverted = xmalloc(width * height);
+	inverted = (uint8 *)xmalloc(width * height);
 	for (y = 0; y < height; y++)
 	{
 		memcpy(&inverted[(height - y - 1) * width], &data[y * width], width);
@@ -668,7 +668,7 @@ process_bmpcache(STREAM s)
 
 	DEBUG(("BMPCACHE(cx=%d,cy=%d,id=%d,idx=%d)\n", width, height, cache_id, cache_idx));
 
-	bmpdata = xmalloc(width * height);
+	bmpdata = (uint8 *)xmalloc(width * height);
 
 	if (bitmap_decompress(bmpdata, width, height, data, size))
 	{
@@ -692,7 +692,7 @@ process_colcache(STREAM s)
 	in_uint8(s, cache_id);
 	in_uint16_le(s, map.ncolours);
 
-	map.colours = xmalloc(3 * map.ncolours);
+	map.colours = (COLOURENTRY *)xmalloc(3 * map.ncolours);
 
 	for (i = 0; i < map.ncolours; i++)
 	{
