@@ -24,13 +24,13 @@
 
 
 /* BITMAP CACHE */
-static HBITMAP bmpcache[3][600];
+static HRDPBITMAP bmpcache[3][600];
 
 /* Retrieve a bitmap from the cache */
-HBITMAP
+HRDPBITMAP
 cache_get_bitmap(uint8 cache_id, uint16 cache_idx)
 {
-	HBITMAP bitmap;
+	HRDPBITMAP bitmap;
 
 	if ((cache_id < NUM_ELEMENTS(bmpcache)) && (cache_idx < NUM_ELEMENTS(bmpcache[0])))
 	{
@@ -45,9 +45,9 @@ cache_get_bitmap(uint8 cache_id, uint16 cache_idx)
 
 /* Store a bitmap in the cache */
 void
-cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HBITMAP bitmap)
+cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HRDPBITMAP bitmap)
 {
-	HBITMAP old;
+	HRDPBITMAP old;
 
 	if ((cache_id < NUM_ELEMENTS(bmpcache)) && (cache_idx < NUM_ELEMENTS(bmpcache[0])))
 	{
@@ -195,13 +195,13 @@ cache_put_desktop(uint32 offset, int cx, int cy, int scanline, int bytes_per_pix
 
 
 /* CURSOR CACHE */
-static HCURSOR cursorcache[0x20];
+static HRDPCURSOR cursorcache[0x20];
 
 /* Retrieve cursor from cache */
-HCURSOR
+HRDPCURSOR
 cache_get_cursor(uint16 cache_idx)
 {
-	HCURSOR cursor;
+	HRDPCURSOR cursor;
 
 	if (cache_idx < NUM_ELEMENTS(cursorcache))
 	{
@@ -216,9 +216,9 @@ cache_get_cursor(uint16 cache_idx)
 
 /* Store cursor in cache */
 void
-cache_put_cursor(uint16 cache_idx, HCURSOR cursor)
+cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor)
 {
-	HCURSOR old;
+	HRDPCURSOR old;
 
 	if (cache_idx < NUM_ELEMENTS(cursorcache))
 	{

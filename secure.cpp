@@ -19,18 +19,7 @@
 */
 
 #include "rdesktop.h"
-#define WITH_OPENSSL
-#ifdef WITH_OPENSSL
-#include <openssl/rc4.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include <openssl/bn.h>
-#else
-#include "crypto/rc4.h"
-#include "crypto/md5.h"
-#include "crypto/sha.h"
-#include "crypto/bn.h"
-#endif
+#include <exception.h>
 
 extern char hostname[16];
 extern int width;
@@ -40,8 +29,8 @@ extern BOOL encryption;
 extern BOOL licence_issued;
 
 static int rc4_key_len;
-static RC4_KEY rc4_decrypt_key;
-static RC4_KEY rc4_encrypt_key;
+// static RC4_KEY rc4_decrypt_key;
+// static RC4_KEY rc4_encrypt_key;
 
 static uint8 sec_sign_key[16];
 static uint8 sec_decrypt_key[16];
@@ -58,28 +47,7 @@ static uint8 sec_crypted_random[SEC_MODULUS_SIZE];
 void
 sec_hash_48(uint8 * out, uint8 * in, uint8 * salt1, uint8 * salt2, uint8 salt)
 {
-	uint8 shasig[20];
-	uint8 pad[4];
-	SHA_CTX sha;
-	MD5_CTX md5;
-	int i;
-
-	for (i = 0; i < 3; i++)
-	{
-		memset(pad, salt + i, i + 1);
-
-		SHA1_Init(&sha);
-		SHA1_Update(&sha, pad, i + 1);
-		SHA1_Update(&sha, in, 48);
-		SHA1_Update(&sha, salt1, 32);
-		SHA1_Update(&sha, salt2, 32);
-		SHA1_Final(shasig, &sha);
-
-		MD5_Init(&md5);
-		MD5_Update(&md5, in, 48);
-		MD5_Update(&md5, shasig, 20);
-		MD5_Final(&out[i * 16], &md5);
-	}
+    throw not_implemented_error();
 }
 
 /*
@@ -89,13 +57,7 @@ sec_hash_48(uint8 * out, uint8 * in, uint8 * salt1, uint8 * salt2, uint8 salt)
 void
 sec_hash_16(uint8 * out, uint8 * in, uint8 * salt1, uint8 * salt2)
 {
-	MD5_CTX md5;
-
-	MD5_Init(&md5);
-	MD5_Update(&md5, in, 16);
-	MD5_Update(&md5, salt1, 32);
-	MD5_Update(&md5, salt2, 32);
-	MD5_Final(out, &md5);
+    throw not_implemented_error();
 }
 
 /* Reduce key entropy from 64 to 40 bits */
@@ -111,46 +73,7 @@ sec_make_40bit(uint8 * key)
 static void
 sec_generate_keys(uint8 * client_key, uint8 * server_key, int rc4_key_size)
 {
-	uint8 session_key[48];
-	uint8 temp_hash[48];
-	uint8 input[48];
-
-	/* Construct input data to hash */
-	memcpy(input, client_key, 24);
-	memcpy(input + 24, server_key, 24);
-
-	/* Generate session key - two rounds of sec_hash_48 */
-	sec_hash_48(temp_hash, input, client_key, server_key, 65);
-	sec_hash_48(session_key, temp_hash, client_key, server_key, 88);
-
-	/* Store first 16 bytes of session key, for generating signatures */
-	memcpy(sec_sign_key, session_key, 16);
-
-	/* Generate RC4 keys */
-	sec_hash_16(sec_decrypt_key, &session_key[16], client_key, server_key);
-	sec_hash_16(sec_encrypt_key, &session_key[32], client_key, server_key);
-
-	if (rc4_key_size == 1)
-	{
-		DEBUG(("40-bit encryption enabled\n"));
-		sec_make_40bit(sec_sign_key);
-		sec_make_40bit(sec_decrypt_key);
-		sec_make_40bit(sec_encrypt_key);
-		rc4_key_len = 8;
-	}
-	else
-	{
-		DEBUG(("128-bit encryption enabled\n"));
-		rc4_key_len = 16;
-	}
-
-	/* Save initial RC4 keys as update keys */
-	memcpy(sec_decrypt_update_key, sec_decrypt_key, 16);
-	memcpy(sec_encrypt_update_key, sec_encrypt_key, 16);
-
-	/* Initialise RC4 state arrays */
-	RC4_set_key(&rc4_decrypt_key, rc4_key_len, sec_decrypt_key);
-	RC4_set_key(&rc4_encrypt_key, rc4_key_len, sec_encrypt_key);
+    throw not_implemented_error();
 }
 
 static uint8 pad_54[40] = {
@@ -181,90 +104,28 @@ buf_out_uint32(uint8 * buffer, uint32 value)
 void
 sec_sign(uint8 * signature, int siglen, uint8 * session_key, int keylen, uint8 * data, int datalen)
 {
-	uint8 shasig[20];
-	uint8 md5sig[16];
-	uint8 lenhdr[4];
-	SHA_CTX sha;
-	MD5_CTX md5;
-
-	buf_out_uint32(lenhdr, datalen);
-
-	SHA1_Init(&sha);
-	SHA1_Update(&sha, session_key, keylen);
-	SHA1_Update(&sha, pad_54, 40);
-	SHA1_Update(&sha, lenhdr, 4);
-	SHA1_Update(&sha, data, datalen);
-	SHA1_Final(shasig, &sha);
-
-	MD5_Init(&md5);
-	MD5_Update(&md5, session_key, keylen);
-	MD5_Update(&md5, pad_92, 48);
-	MD5_Update(&md5, shasig, 20);
-	MD5_Final(md5sig, &md5);
-
-	memcpy(signature, md5sig, siglen);
+    throw not_implemented_error();
 }
 
 /* Update an encryption key - similar to the signing process */
 static void
 sec_update(uint8 * key, uint8 * update_key)
 {
-	uint8 shasig[20];
-	SHA_CTX sha;
-	MD5_CTX md5;
-	RC4_KEY update;
-
-	SHA1_Init(&sha);
-	SHA1_Update(&sha, update_key, rc4_key_len);
-	SHA1_Update(&sha, pad_54, 40);
-	SHA1_Update(&sha, key, rc4_key_len);
-	SHA1_Final(shasig, &sha);
-
-	MD5_Init(&md5);
-	MD5_Update(&md5, update_key, rc4_key_len);
-	MD5_Update(&md5, pad_92, 48);
-	MD5_Update(&md5, shasig, 20);
-	MD5_Final(key, &md5);
-
-	RC4_set_key(&update, rc4_key_len, key);
-	RC4(&update, rc4_key_len, key, key);
-
-	if (rc4_key_len == 8)
-		sec_make_40bit(key);
+    throw not_implemented_error();
 }
 
 /* Encrypt data using RC4 */
 static void
 sec_encrypt(uint8 * data, int length)
 {
-	static int use_count;
-
-	if (use_count == 4096)
-	{
-		sec_update(sec_encrypt_key, sec_encrypt_update_key);
-		RC4_set_key(&rc4_encrypt_key, rc4_key_len, sec_encrypt_key);
-		use_count = 0;
-	}
-
-	RC4(&rc4_encrypt_key, length, data, data);
-	use_count++;
+    throw not_implemented_error();
 }
 
 /* Decrypt data using RC4 */
 static void
 sec_decrypt(uint8 * data, int length)
 {
-	static int use_count;
-
-	if (use_count == 4096)
-	{
-		sec_update(sec_decrypt_key, sec_decrypt_update_key);
-		RC4_set_key(&rc4_decrypt_key, rc4_key_len, sec_decrypt_key);
-		use_count = 0;
-	}
-
-	RC4(&rc4_decrypt_key, length, data, data);
-	use_count++;
+    throw not_implemented_error();
 }
 
 static void
@@ -285,36 +146,7 @@ reverse(uint8 * p, int len)
 static void
 sec_rsa_encrypt(uint8 * out, uint8 * in, int len, uint8 * modulus, uint8 * exponent)
 {
-	BN_CTX *ctx;
-	BIGNUM mod, exp, x, y;
-	uint8 inr[SEC_MODULUS_SIZE];
-	int outlen;
-
-	reverse(modulus, SEC_MODULUS_SIZE);
-	reverse(exponent, SEC_EXPONENT_SIZE);
-	memcpy(inr, in, len);
-	reverse(inr, len);
-
-	ctx = BN_CTX_new();
-	BN_init(&mod);
-	BN_init(&exp);
-	BN_init(&x);
-	BN_init(&y);
-
-	BN_bin2bn(modulus, SEC_MODULUS_SIZE, &mod);
-	BN_bin2bn(exponent, SEC_EXPONENT_SIZE, &exp);
-	BN_bin2bn(inr, len, &x);
-	BN_mod_exp(&y, &x, &exp, &mod, ctx);
-	outlen = BN_bn2bin(&y, out);
-	reverse(out, outlen);
-	if (outlen < SEC_MODULUS_SIZE)
-		memset(out + outlen, 0, SEC_MODULUS_SIZE - outlen);
-
-	BN_free(&y);
-	BN_clear_free(&x);
-	BN_free(&exp);
-	BN_free(&mod);
-	BN_CTX_free(ctx);
+    throw not_implemented_error();
 }
 
 /* Initialise secure transport packet */

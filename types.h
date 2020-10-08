@@ -34,10 +34,10 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-typedef void *HBITMAP;
+typedef void *HRDPBITMAP;
 typedef void *HGLYPH;
 typedef void *HCOLOURMAP;
-typedef void *HCURSOR;
+typedef void *HRDPCURSOR;
 
 typedef struct _COLOURENTRY
 {
@@ -91,7 +91,7 @@ typedef struct _FONTGLYPH
 	sint16 baseline;
 	uint16 width;
 	uint16 height;
-	HBITMAP pixmap;
+    HRDPBITMAP pixmap;
 
 }
 FONTGLYPH;

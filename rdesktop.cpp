@@ -34,12 +34,6 @@
 #include <sys/socket.h>		/* socket connect */
 #include <sys/un.h>		/* sockaddr_un */
 #endif
-#define WITH_OPENSSL
-#ifdef WITH_OPENSSL
-#include <openssl/md5.h>
-#else
-#include "crypto/md5.h"
-#endif
 
 char title[32] = "";
 char username[16];
@@ -95,7 +89,7 @@ read_password(char *password, int size)
 
 /* Client program */
 int
-main(int argc, char *argv[])
+tmain(int argc, char *argv[])
 {
 	throw not_implemented_error();
 }

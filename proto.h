@@ -4,8 +4,8 @@
 BOOL bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input,
 		       int size);
 /* cache.c */
-HBITMAP cache_get_bitmap(uint8 cache_id, uint16 cache_idx);
-void cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HBITMAP bitmap);
+HRDPBITMAP cache_get_bitmap(uint8 cache_id, uint16 cache_idx);
+void cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HRDPBITMAP bitmap);
 FONTGLYPH *cache_get_font(uint8 font, uint16 character);
 void cache_put_font(uint8 font, uint16 character, uint16 offset, uint16 baseline, uint16 width,
 		    uint16 height, HGLYPH pixmap);
@@ -14,8 +14,8 @@ void cache_put_text(uint8 cache_id, void *data, int length);
 uint8 *cache_get_desktop(uint32 offset, int cx, int cy, int bytes_per_pixel);
 void cache_put_desktop(uint32 offset, int cx, int cy, int scanline, int bytes_per_pixel,
 		       uint8 * data);
-HCURSOR cache_get_cursor(uint16 cache_idx);
-void cache_put_cursor(uint16 cache_idx, HCURSOR cursor);
+HRDPCURSOR cache_get_cursor(uint16 cache_idx);
+void cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor);
 /* ewmhints.c */
 int get_current_workarea(uint32 * x, uint32 * y, uint32 * width, uint32 * height);
 /* iso.c */
@@ -36,7 +36,7 @@ void mcs_disconnect(void);
 void process_orders(STREAM s);
 void reset_order_state(void);
 /* rdesktop.c */
-int main(int argc, char *argv[]);
+int tmain(int argc, char *argv[]);
 void generate_random(uint8 * random);
 void *xmalloc(int size);
 void *xrealloc(void *oldmem, int size);
@@ -89,15 +89,15 @@ void ui_destroy_window(void);
 void xwin_toggle_fullscreen(void);
 int ui_select(int rdp_socket);
 void ui_move_pointer(int x, int y);
-HBITMAP ui_create_bitmap(int width, int height, uint8 * data);
+HRDPBITMAP ui_create_bitmap(int width, int height, uint8 * data);
 void ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, uint8 * data);
-void ui_destroy_bitmap(HBITMAP bmp);
+void ui_destroy_bitmap(HRDPBITMAP bmp);
 HGLYPH ui_create_glyph(int width, int height, uint8 * data);
 void ui_destroy_glyph(HGLYPH glyph);
-HCURSOR ui_create_cursor(unsigned int x, unsigned int y, int width, int height, uint8 * andmask,
+HRDPCURSOR ui_create_cursor(unsigned int x, unsigned int y, int width, int height, uint8 * andmask,
 			 uint8 * xormask);
-void ui_set_cursor(HCURSOR cursor);
-void ui_destroy_cursor(HCURSOR cursor);
+void ui_set_cursor(HRDPCURSOR cursor);
+void ui_destroy_cursor(HRDPCURSOR cursor);
 HCOLOURMAP ui_create_colourmap(COLOURMAP * colours);
 void ui_destroy_colourmap(HCOLOURMAP map);
 void ui_set_colourmap(HCOLOURMAP map);
@@ -108,8 +108,8 @@ void ui_destblt(uint8 opcode, int x, int y, int cx, int cy);
 void ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH * brush, int bgcolour,
 	       int fgcolour);
 void ui_screenblt(uint8 opcode, int x, int y, int cx, int cy, int srcx, int srcy);
-void ui_memblt(uint8 opcode, int x, int y, int cx, int cy, HBITMAP src, int srcx, int srcy);
-void ui_triblt(uint8 opcode, int x, int y, int cx, int cy, HBITMAP src, int srcx, int srcy,
+void ui_memblt(uint8 opcode, int x, int y, int cx, int cy, HRDPBITMAP src, int srcx, int srcy);
+void ui_triblt(uint8 opcode, int x, int y, int cx, int cy, HRDPBITMAP src, int srcx, int srcy,
 	       BRUSH * brush, int bgcolour, int fgcolour);
 void ui_line(uint8 opcode, int startx, int starty, int endx, int endy, PEN * pen);
 void ui_rect(int x, int y, int cx, int cy, int colour);

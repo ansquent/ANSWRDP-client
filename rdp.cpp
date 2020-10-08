@@ -507,7 +507,7 @@ process_pointer_pdu(STREAM s)
 	uint16 message_type;
 	uint16 x, y, width, height, cache_idx, masklen, datalen;
 	uint8 *mask, *data;
-	HCURSOR cursor;
+    HRDPCURSOR cursor;
 
 	in_uint16_le(s, message_type);
 	in_uint8s(s, 2);	/* pad */

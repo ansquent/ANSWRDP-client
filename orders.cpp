@@ -339,7 +339,7 @@ process_desksave(STREAM s, DESKSAVE_ORDER * os, uint32 present, BOOL delta)
 static void
 process_memblt(STREAM s, MEMBLT_ORDER * os, uint32 present, BOOL delta)
 {
-	HBITMAP bitmap;
+	HRDPBITMAP bitmap;
 
 	if (present & 0x0001)
 	{
@@ -385,7 +385,7 @@ process_memblt(STREAM s, MEMBLT_ORDER * os, uint32 present, BOOL delta)
 static void
 process_triblt(STREAM s, TRIBLT_ORDER * os, uint32 present, BOOL delta)
 {
-	HBITMAP bitmap;
+	HRDPBITMAP bitmap;
 
 	if (present & 0x000001)
 	{
@@ -618,7 +618,7 @@ process_text2(STREAM s, TEXT2_ORDER * os, uint32 present, BOOL delta)
 static void
 process_raw_bmpcache(STREAM s)
 {
-	HBITMAP bitmap;
+	HRDPBITMAP bitmap;
 	uint16 cache_idx, bufsize;
 	uint8 cache_id, width, height, bpp;
 	uint8 *data, *inverted;
@@ -649,7 +649,7 @@ process_raw_bmpcache(STREAM s)
 static void
 process_bmpcache(STREAM s)
 {
-	HBITMAP bitmap;
+	HRDPBITMAP bitmap;
 	uint16 cache_idx, size;
 	uint8 cache_id, width, height, bpp;
 	uint8 *data, *bmpdata;

@@ -231,7 +231,7 @@ ui_move_pointer(int x, int y)
 	throw not_implemented_error();
 }
 
-HBITMAP
+HRDPBITMAP
 ui_create_bitmap(int width, int height, uint8 * data)
 {
 	throw not_implemented_error();
@@ -244,7 +244,7 @@ ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, uint8 * dat
 }
 
 void
-ui_destroy_bitmap(HBITMAP bmp)
+ui_destroy_bitmap(HRDPBITMAP bmp)
 {
 	throw not_implemented_error();
 }
@@ -261,7 +261,7 @@ ui_destroy_glyph(HGLYPH glyph)
 	throw not_implemented_error();
 }
 
-HCURSOR
+HRDPCURSOR
 ui_create_cursor(unsigned int x, unsigned int y, int width, int height,
 		 uint8 * andmask, uint8 * xormask)
 {
@@ -269,13 +269,13 @@ ui_create_cursor(unsigned int x, unsigned int y, int width, int height,
 }
 
 void
-ui_set_cursor(HCURSOR cursor)
+ui_set_cursor(HRDPCURSOR cursor)
 {
 	throw not_implemented_error();
 }
 
 void
-ui_destroy_cursor(HCURSOR cursor)
+ui_destroy_cursor(HRDPCURSOR cursor)
 {
 	throw not_implemented_error();
 }
@@ -349,7 +349,7 @@ ui_screenblt(uint8 opcode,
 void
 ui_memblt(uint8 opcode,
 	  /* dest */ int x, int y, int cx, int cy,
-	  /* src */ HBITMAP src, int srcx, int srcy)
+      /* src */ HRDPBITMAP src, int srcx, int srcy)
 {
 	throw not_implemented_error();
 }
@@ -357,7 +357,7 @@ ui_memblt(uint8 opcode,
 void
 ui_triblt(uint8 opcode,
 	  /* dest */ int x, int y, int cx, int cy,
-	  /* src */ HBITMAP src, int srcx, int srcy,
+      /* src */ HRDPBITMAP src, int srcx, int srcy,
 	  /* brush */ BRUSH * brush, int bgcolour, int fgcolour)
 {
 	/* This is potentially difficult to do in general. Until someone

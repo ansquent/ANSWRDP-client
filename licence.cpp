@@ -19,12 +19,7 @@
 */
 
 #include "rdesktop.h"
-#define WITH_OPENSSL
-#ifdef WITH_OPENSSL
-#include <openssl/rc4.h>
-#else
-#include "crypto/rc4.h"
-#endif
+#include <exception.h>
 
 extern char username[16];
 extern char hostname[16];
@@ -233,59 +228,14 @@ licence_parse_authreq(STREAM s, uint8 ** token, uint8 ** signature)
 static void
 licence_process_authreq(STREAM s)
 {
-	uint8 *in_token, *in_sig;
-	uint8 out_token[LICENCE_TOKEN_SIZE], decrypt_token[LICENCE_TOKEN_SIZE];
-	uint8 hwid[LICENCE_HWID_SIZE], crypt_hwid[LICENCE_HWID_SIZE];
-	uint8 sealed_buffer[LICENCE_TOKEN_SIZE + LICENCE_HWID_SIZE];
-	uint8 out_sig[LICENCE_SIGNATURE_SIZE];
-	RC4_KEY crypt_key;
-
-	/* Parse incoming packet and save the encrypted token */
-	licence_parse_authreq(s, &in_token, &in_sig);
-	memcpy(out_token, in_token, LICENCE_TOKEN_SIZE);
-
-	/* Decrypt the token. It should read TEST in Unicode. */
-	RC4_set_key(&crypt_key, 16, licence_key);
-	RC4(&crypt_key, LICENCE_TOKEN_SIZE, in_token, decrypt_token);
-
-	/* Generate a signature for a buffer of token and HWID */
-	licence_generate_hwid(hwid);
-	memcpy(sealed_buffer, decrypt_token, LICENCE_TOKEN_SIZE);
-	memcpy(sealed_buffer + LICENCE_TOKEN_SIZE, hwid, LICENCE_HWID_SIZE);
-	sec_sign(out_sig, 16, licence_sign_key, 16, sealed_buffer, sizeof(sealed_buffer));
-
-	/* Now encrypt the HWID */
-	RC4_set_key(&crypt_key, 16, licence_key);
-	RC4(&crypt_key, LICENCE_HWID_SIZE, hwid, crypt_hwid);
-
-	licence_send_authresp(out_token, crypt_hwid, out_sig);
+    throw not_implemented_error();
 }
 
 /* Process an licence issue packet */
 static void
 licence_process_issue(STREAM s)
 {
-	RC4_KEY crypt_key;
-	uint32 length;
-	uint16 check;
-
-	in_uint8s(s, 2);	/* 3d 45 - unknown */
-	in_uint16_le(s, length);
-	if (!s_check_rem(s, length))
-		return;
-
-	RC4_set_key(&crypt_key, 16, licence_key);
-	RC4(&crypt_key, length, s->p, s->p);
-
-	in_uint16(s, check);
-	if (check != 0)
-		return;
-
-	licence_issued = True;
-
-#ifdef SAVE_LICENCE
-	save_licence(s->p, length - 2);
-#endif
+    throw not_implemented_error();
 }
 
 /* Process a licence packet */
