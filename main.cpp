@@ -2,12 +2,12 @@
 
 #include <QApplication>
 #include "rdesktop.h"
+#include <QThread>
 
 int main(int argc, char *argv[])
 {
-    tmain(argc, argv);
-//    QApplication a(argc, argv);
-//    MainWindow w;
-//    w.show();
-//    return a.exec();
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+    return a.exec();
 }

@@ -29,14 +29,13 @@
 //#include <sys/times.h>		/* times */
 #include "rdesktop.h"
 #include <exception.h>
-
-#ifdef EGD_SOCKET
-#include <sys/socket.h>		/* socket connect */
-#include <sys/un.h>		/* sockaddr_un */
-#endif
+#include <cstdlib>
+#include <QDebug>
+#include <QRandomGenerator>
+#include <QTcpSocket>
 
 char title[32] = "";
-char username[16];
+char username[16] = "Administrator";
 char hostname[16];
 char keymapname[16];
 int keylayout = 0x409;		/* Defaults to US keyboard layout */
@@ -91,7 +90,7 @@ read_password(char *password, int size)
 int
 tmain(int argc, char *argv[])
 {
-	throw not_implemented_error();
+    return 0;
 }
 
 
@@ -99,7 +98,10 @@ tmain(int argc, char *argv[])
 void
 generate_random(uint8 * random)
 {
-	throw not_implemented_error();
+    //throw not_implemented_error();
+    for (int i = 0; i < SEC_RANDOM_SIZE; ++i){
+        random[i] = (uint8)(QRandomGenerator::global()->generate() % (1 << 8));
+    }
 }
 
 /* malloc; exit if out of memory */
@@ -137,41 +139,62 @@ xfree(void *mem)
 
 /* report an error */
 void
-error(char *format, ...)
+error(const char *format, ...)
 {
-	va_list ap;
-
-	fprintf(stderr, "ERROR: ");
-
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+    char buf[500]; int i;
+    va_list vlist;
+    va_start(vlist,format);
+    i=vsprintf(buf,format,vlist);
+    va_end(vlist);
+    qDebug()<< " ERROR: " << buf;
+    exit(-1);
 }
 
 /* report a warning */
 void
-warning(char *format, ...)
+warning(const char *format, ...)
 {
-	va_list ap;
-
-	fprintf(stderr, "WARNING: ");
-
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+    char buf[500]; int i;
+    va_list vlist;
+    va_start(vlist,format);
+    i=vsprintf(buf,format,vlist);
+    va_end(vlist);
+    qDebug()<< " WARNING: " << buf;
 }
 
 /* report an unimplemented protocol feature */
 void
-unimpl(char *format, ...)
+unimpl(const char *format, ...)
 {
-	va_list ap;
+    char buf[500]; int i;
+    va_list vlist;
+    va_start(vlist,format);
+    i=vsprintf(buf,format,vlist);
+    va_end(vlist);
+    qDebug()<< " UNIMPL: " << buf;
+}
 
-	fprintf(stderr, "NOT IMPLEMENTED: ");
+/* report an info */
+void
+info(const char *format, ...)
+{
+    char buf[500]; int i;
+    va_list vlist;
+    va_start(vlist,format);
+    i=vsprintf(buf,format,vlist);
+    va_end(vlist);
+    qDebug()<< " INFO: " << buf;
+}
 
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+void info(STREAM s){
+    for (int i = 0; i < (s->end - s->p);){
+        QString qs;
+        for (int j = 0; j < 10; ++j, ++i){
+            qs += " ";
+            qs += QString("0x%1").arg(QString("%1").arg(s->p[i],2,16,QLatin1Char('0')).toUpper());
+        }
+        qDebug() << qs;
+    }
 }
 
 /* produce a hex dump */

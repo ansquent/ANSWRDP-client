@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -43,6 +43,10 @@ HEADERS += \
 
 FORMS += \
     mainwindow.ui
+
+INCLUDEPATH += "./third_party"
+LIBS += "C:\\OpenSSL-Win32\\lib\\MinGW\\libcrypto-1_1.a" \
+    "C:\\OpenSSL-Win32\\lib\\MinGW\\libssl-1_1.a"
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

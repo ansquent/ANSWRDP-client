@@ -26,7 +26,7 @@ iso_send_msg(uint8 code)
 {
 	STREAM s;
 
-	s = tcp_init(11);
+    s = tcp_init(11);
 
 	out_uint8(s, 3);	/* version */
 	out_uint8(s, 0);	/* reserved */
@@ -50,7 +50,8 @@ iso_recv_msg(uint8 * code)
 	uint16 length;
 	uint8 version;
 
-	s = tcp_recv(4);
+    s = tcp_recv(4);
+    //info(s);
 	if (s == NULL)
 		return NULL;
 
@@ -65,6 +66,7 @@ iso_recv_msg(uint8 * code)
 	in_uint16_be(s, length);
 
 	s = tcp_recv(length - 4);
+    //info(s);
 	if (s == NULL)
 		return NULL;
 
@@ -124,10 +126,11 @@ iso_recv(void)
 	if (s == NULL)
 		return NULL;
 
+    //warning("%d", code);
 	if (code != ISO_PDU_DT)
 	{
-		error("expected DT, got 0x%x\n", code);
-		return NULL;
+        error("expected DT, got 0x%x\n", code);
+        return s;
 	}
 
 	return s;

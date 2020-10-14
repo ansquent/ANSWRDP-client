@@ -26,7 +26,7 @@ typedef int BOOL;
 #define True  (1)
 #define False (0)
 #endif
-
+#include <QImage>
 typedef unsigned char uint8;
 typedef signed char sint8;
 typedef unsigned short uint16;
@@ -34,8 +34,8 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-typedef void *HRDPBITMAP;
-typedef void *HGLYPH;
+typedef QImage *HRDPBITMAP;
+typedef QImage *HGLYPH;
 typedef void *HCOLOURMAP;
 typedef void *HRDPCURSOR;
 

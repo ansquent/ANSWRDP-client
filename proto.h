@@ -1,5 +1,9 @@
 #ifndef PROTO_H
 #define PROTO_H
+#include <types.h>
+#include <parse.h>
+#include <mainwindow.h>
+#include <QColor>
 /* bitmap.c */
 BOOL bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input,
 		       int size);
@@ -41,9 +45,11 @@ void generate_random(uint8 * random);
 void *xmalloc(int size);
 void *xrealloc(void *oldmem, int size);
 void xfree(void *mem);
-void error(char *format, ...);
-void warning(char *format, ...);
-void unimpl(char *format, ...);
+void info(const char *format, ...);
+void info(STREAM s);
+void error(const char *format, ...);
+void warning(const char *format, ...);
+void unimpl(const char *format, ...);
 void hexdump(unsigned char *p, unsigned int len);
 /* rdp.c */
 void rdp_out_unistr(STREAM s, char *string, int len);
@@ -67,7 +73,7 @@ void sec_disconnect(void);
 /* tcp.c */
 STREAM tcp_init(int maxlen);
 void tcp_send(STREAM s);
-STREAM tcp_recv(int length);
+STREAM tcp_recv(unsigned length);
 BOOL tcp_connect(char *server);
 void tcp_disconnect(void);
 /* xkeymap.c */
@@ -82,7 +88,7 @@ void rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode);
 /* xwin.c */
 void mwm_hide_decorations(void);
 BOOL get_key_state(unsigned int state, uint32 keysym);
-BOOL ui_init(void);
+BOOL ui_init(MainWindow *);
 void ui_deinit(void);
 BOOL ui_create_window(void);
 void ui_destroy_window(void);
@@ -120,5 +126,7 @@ void ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y, int clipx,
 		  int fgcolour, uint8 * text, uint8 length);
 void ui_desktop_save(uint32 offset, int x, int y, int cx, int cy);
 void ui_desktop_restore(uint32 offset, int x, int y, int cx, int cy);
+
+QColor getColorByOpcode(int opcode, QColor nowc, QColor willc);
 
 #endif

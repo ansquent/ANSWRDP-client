@@ -28,8 +28,12 @@
 #include <errno.h>		/* errno */
 #include "rdesktop.h"
 #include <exception.h>
+#include <QTcpSocket>
+#include <QHostInfo>
+#include <QDebug>
 
-static int sock;
+//static int sock;
+QTcpSocket * sock;
 static struct stream in;
 static struct stream out;
 extern int tcp_port_rdp;
@@ -38,33 +42,105 @@ extern int tcp_port_rdp;
 STREAM
 tcp_init(int maxlen)
 {
-	throw not_implemented_error();
+    //throw not_implemented_error();
+    if (maxlen > out.size)
+    {
+        out.data = (unsigned char *)xrealloc(out.data, maxlen);
+        out.size = maxlen;
+    }
+
+    out.p = out.data;
+    out.end = out.data + out.size;
+    return &out;
 }
 
 /* Send TCP transport data packet */
 void
 tcp_send(STREAM s)
 {
-	throw not_implemented_error();
+    int length = s->end - s->data;
+    int sent, total = 0;
+
+    while (total < length)
+    {
+        //sent = send(sock, s->data + total, length - total, 0);
+        sent = sock->write((char *)(s->data + total), length - total);
+        if (sent <= 0)
+        {
+            error("send: %s", strerror(errno));
+        }
+        total += sent;
+    }
+
+    if (!sock->waitForBytesWritten(3000)){
+        error("Error: waitForBytesWritten Failed.");
+    }
+    info("sent %d bytes", length);
 }
 
 /* Receive a message on the TCP layer */
 STREAM
-tcp_recv(int length)
+tcp_recv(unsigned length)
 {
-	throw not_implemented_error();
+    int rcvd = 0;
+    if (length > in.size)
+    {
+        in.data = (unsigned char *)xrealloc(in.data, length);
+        in.size = length;
+    }
+    in.end = in.p = in.data;
+    while (length > 0)
+    {
+        info("avaliable %d", sock->bytesAvailable());
+        info("length %d", length);
+        if (sock->bytesAvailable() <= 0){
+            if (!sock->waitForReadyRead(3000)){
+                warning("Error: waitForReadyRead Failed.");
+                return nullptr;
+            }
+        }
+        //rcvd = recv(sock, in.end, length, 0);
+        rcvd = sock->read((char *)in.end, length);
+        info("received %d bytes", rcvd);
+        if (rcvd <= 0)
+        {
+            error("recv: %s", strerror(errno));
+        }
+        in.end += rcvd;
+        length -= rcvd;
+    }
+    return &in;
 }
 
 /* Establish a connection on the TCP layer */
 BOOL
 tcp_connect(char *server)
 {
-	throw not_implemented_error();
+    //throw not_implemented_error();
+    QHostInfo host = QHostInfo::fromName(QString(server));
+    sock->connectToHost(server, tcp_port_rdp);
+    info(server);
+    if (!sock->waitForConnected(30000)){
+        qDebug() << sock->errorString();
+        error("Error: WaitForConnected Failed.");
+    }
+
+    in.size = 4096;
+    in.data = (unsigned char *)xmalloc(in.size);
+
+    out.size = 4096;
+    out.data = (unsigned char *)xmalloc(out.size);
+    return True;
 }
 
 /* Disconnect on the TCP layer */
 void
 tcp_disconnect(void)
 {
-	throw not_implemented_error();
+    //throw not_implemented_error();
+    sock->disconnectFromHost();
+    if (!sock->waitForDisconnected()){
+        qDebug() << sock->errorString();
+        error("Error: WaitForDisconnected Failed.");
+    }
 }
