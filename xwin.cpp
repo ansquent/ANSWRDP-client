@@ -85,6 +85,26 @@ BOOL owncolmap = False;
 #define SET_FUNCTION(rop2)	{ if (rop2 != ROP2_COPY) XSetFunction(display, gc, rop2_map[rop2]); }
 #define RESET_FUNCTION(rop2)	{ if (rop2 != ROP2_COPY) XSetFunction(display, gc, GXcopy); }
 
+static QPainter::CompositionMode rop2_map[] = {
+    /* https://doc.qt.io/qt-5/qpainter.html#CompositionMode-enum */
+    QPainter::RasterOp_ClearDestination,		/* 0 */
+    QPainter::RasterOp_NotSourceAndNotDestination,			/* DPon */
+    QPainter::RasterOp_NotSourceAndDestination,		/* DPna */
+    QPainter::RasterOp_NotSource,		/* Pn */
+    QPainter::RasterOp_SourceAndNotDestination,		/* PDna */
+    QPainter::RasterOp_NotDestination,		/* Dn */
+    QPainter::RasterOp_SourceXorDestination,			/* DPx */
+    QPainter::RasterOp_NotSourceOrNotDestination,			/* DPan */
+    QPainter::RasterOp_SourceAndDestination,			/* DPa */
+    QPainter::RasterOp_NotSourceXorDestination,		/* DPxn */
+    QPainter::CompositionMode_Destination,			/* D */
+    QPainter::RasterOp_NotSourceOrDestination,		/* DPno */
+    QPainter::CompositionMode_Source,			/* P */
+    QPainter::RasterOp_SourceOrNotDestination,		/* PDno */
+    QPainter::RasterOp_SourceXorDestination,			/* DPo */
+    QPainter::RasterOp_SetDestination			/* 1 */
+};
+
 void
 mwm_hide_decorations(void)
 {
@@ -160,7 +180,9 @@ ui_create_bitmap(int width, int height, uint8 * data)
     //throw not_implemented_error();
     QImage * result = new QImage(data, width, height, QImage::Format_Grayscale8);
     *result = result->convertToFormat(bpp);
-    return result;
+    QPixmap * pixmap = new QPixmap();
+    *pixmap = QPixmap::fromImage(*result);
+    return pixmap;
 }
 
 void
@@ -182,15 +204,23 @@ ui_destroy_bitmap(HRDPBITMAP bmp)
 HGLYPH
 ui_create_glyph(int width, int height, uint8 * data)
 {
-    return (HGLYPH)1;
-    throw not_implemented_error();
+//    return (HGLYPH)1;
+    QImage *image;
+    QPixmap *bitmap = new QPixmap();
+    int scanline;
+
+    scanline = (width + 7) / 8;
+    image = new QImage(data, width, height, QImage::Format_Mono); /* MSBFirst */
+
+    *bitmap = QPixmap::fromImage(*image);
+    delete image;
+    return bitmap;
 }
 
 void
 ui_destroy_glyph(HGLYPH glyph)
 {
-    return;
-    throw not_implemented_error();
+    delete glyph;
 }
 
 HRDPCURSOR
@@ -198,7 +228,6 @@ ui_create_cursor(unsigned int x, unsigned int y, int width, int height,
          uint8 * andmask, uint8 * xormask)
 {
     return (HRDPCURSOR)1;
-    throw not_implemented_error();
 }
 
 void
@@ -263,7 +292,31 @@ ui_patblt(uint8 opcode,
       /* dest */ int x, int y, int cx, int cy,
       /* brush */ BRUSH * brush, int bgcolour, int fgcolour)
 {
-    //throw not_implemented_error();
+    QImage willImage = pixmap->toImage();
+    QPixmap * fill;
+    uint8 ipattern[8];
+
+    QPainter painter;
+    painter.begin(&willImage);
+    painter.setCompositionMode(rop2_map[opcode]);
+
+    QBrush realBrush;
+    painter.setBrush(realBrush);
+
+    switch(brush->style){
+        case 0:
+            realBrush.setStyle(Qt::BrushStyle::SolidPattern);
+            painter.fillRect(x, y, cx, cy, realBrush);
+            break;
+        case 3:
+            realBrush.setStyle(Qt::BrushStyle::TexturePattern);
+            realBrush.setTexture(*ui_create_glyph(8, 8, ipattern));
+            painter.fillRect(x, y, cx, cy, realBrush);
+            break;
+    }
+
+    window->getPanel()->setPixmap(*pixmap);
+    window->getPanel()->repaint();
 }
 
 void
@@ -352,36 +405,18 @@ ui_memblt(uint8 opcode,
       /* src */ HRDPBITMAP src, int srcx, int srcy)
 {
     //throw not_implemented_error();
-    QImage image = *src;
+    QImage image = src->toImage();
     QImage willImage = pixmap->toImage();
 
-    for (int i = 0; i < cx; ++i){
-        for (int j = 0; j < cy; ++j){
-            int nowx = srcx + i;
-            int nowy = srcy + j;
-            int willx = x + i;
-            int willy = y + j;
-            if (nowx >= image.width() || nowy >= image.height()){
-                throw not_implemented_error();
-            }
-            else if (willx >= willImage.width() || willy >= willImage.height()){
-                throw not_implemented_error();
-            }
-            QColor nowc = image.pixelColor(nowx, nowy);
-            QColor willc = willImage.pixelColor(willx, willy);
-            QColor resultc = getColorByOpcode(0, nowc, willc);
-            image.setPixelColor(nowx, nowy, resultc);
-        }
-    }
+    QPainter painter;
+    painter.begin(&willImage);
+    painter.setCompositionMode(rop2_map[opcode]);
 
-    QPixmap srcPixmap = QPixmap::fromImage(image);
-
-    QPainter painter(pixmap);
-    painter.drawPixmap(x, y, srcPixmap, srcx, srcy, cx, cy);
+    QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
+    painter.drawImage(destRect, image, srcRect);
 
     window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
-
 }
 
 void
@@ -424,6 +459,7 @@ ui_line(uint8 opcode,
 {
     // throw not_implemented_error();
     QPainter painter(pixmap);
+    painter.setCompositionMode(rop2_map[opcode]);
     QPen mypen;
     mypen.setColor(pen->colour);
     painter.setPen(mypen);
@@ -482,5 +518,6 @@ ui_desktop_restore(uint32 offset, int x, int y, int cx, int cy)
     offset *= bpp / 8;
     uint8 * data = cache_get_desktop(offset, cx, cy, bpp / 8);
     QImage image(data, width, height, bpp);
-    ui_memblt(12, x, y, cx, cy, &image, 0, 0);
+    QPixmap pixmap = QPixmap::fromImage(image);
+    ui_memblt(12, x, y, cx, cy, &pixmap, 0, 0);
 }

@@ -34,8 +34,8 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-typedef QImage *HRDPBITMAP;
-typedef QImage *HGLYPH;
+typedef QPixmap *HRDPBITMAP;
+typedef QPixmap *HGLYPH;
 typedef void *HCOLOURMAP;
 typedef void *HRDPCURSOR;
 
