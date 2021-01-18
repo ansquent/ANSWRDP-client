@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     timer->start();
 
     sock = new QTcpSocket();
-    char server[256] = "192.168.64.128";
+    char server[256] = "192.168.192.128";
     uint32 flags = RDP_LOGON_NORMAL;
     char domain[256] = {0};
     char password[256] = "123456";

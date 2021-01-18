@@ -216,6 +216,7 @@ ui_destroy_cursor(HRDPCURSOR cursor)
 HCOLOURMAP
 ui_create_colourmap(COLOURMAP * colours)
 {
+    return NULL;
     //throw not_implemented_error();
 }
 

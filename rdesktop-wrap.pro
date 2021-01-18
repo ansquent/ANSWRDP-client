@@ -44,14 +44,7 @@ HEADERS += \
 FORMS += \
     mainwindow.ui
 
-INCLUDEPATH += "./third_party"
-LIBS += "C:\\OpenSSL-Win32\\lib\\MinGW\\libcrypto-1_1.a" \
-    "C:\\OpenSSL-Win32\\lib\\MinGW\\libssl-1_1.a"
-
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-DISTFILES += \
-    rdpwrap.pro.user

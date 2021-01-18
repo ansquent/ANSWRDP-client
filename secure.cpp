@@ -20,10 +20,13 @@
 
 #include "rdesktop.h"
 
-#include <openssl/rc4.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include <openssl/bn.h>
+#include "third_party/openssl/rc4.h"
+#include "third_party/openssl/md5.h"
+#include "third_party/openssl/sha.h"
+#include "third_party/openssl/bn.h"
+
+#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libcrypto.lib")
+#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libssl.lib")
 
 extern char hostname[16];
 extern int width;
@@ -444,8 +447,8 @@ sec_parse_public_key(STREAM s, uint8 ** modulus, uint8 ** exponent)
     in_uint32_le(s, modulus_len);
     if (modulus_len != SEC_MODULUS_SIZE + SEC_PADDING_SIZE)
     {
-        error("modulus len 0x%x\n", modulus_len);
-        return False;
+        //error("modulus len 0x%x\n", modulus_len);
+        //return False;
     }
 
     in_uint8s(s, 8);	/* modulus_bits, unknown */
