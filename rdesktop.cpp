@@ -19,14 +19,9 @@
 */
 
 #include <stdarg.h>		/* va_list va_start va_end */
-//#include <unistd.h>		/* read close getuid getgid getpid getppid gethostname */
 #include <fcntl.h>		/* open */
 #include <errno.h>		/* save licence uses it. */
-//#include <pwd.h>		/* getpwuid */
-//#include <termios.h>		/* tcgetattr tcsetattr */
 #include <sys/stat.h>		/* stat */
-//#include <sys/time.h>		/* gettimeofday */
-//#include <sys/times.h>		/* times */
 #include "rdesktop.h"
 #include <exception.h>
 #include <cstdlib>
@@ -98,7 +93,6 @@ tmain(int argc, char *argv[])
 void
 generate_random(uint8 * random)
 {
-    //throw not_implemented_error();
     for (int i = 0; i < SEC_RANDOM_SIZE; ++i){
         random[i] = (uint8)(QRandomGenerator::global()->generate() % (1 << 8));
     }

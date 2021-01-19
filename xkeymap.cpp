@@ -18,9 +18,7 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-// #include <X11/Xlib.h>
 #define XK_MISCELLANY
-// #include <X11/keysymdef.h>
 #include <ctype.h>
 #include <limits.h>
 #include <time.h>
@@ -32,7 +30,6 @@
 #define KEYMAP_MASK 0xffff
 #define KEYMAP_MAX_LINE_LENGTH 80
 
-// extern Display *display;
 extern char keymapname[16];
 extern int keylayout;
 extern BOOL enable_compose;

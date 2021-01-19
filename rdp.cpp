@@ -644,22 +644,18 @@ process_update_pdu(STREAM s)
 	switch (update_type)
 	{
 		case RDP_UPDATE_ORDERS:
-            info("RDP_UPDATE_ORDERS");
 			process_orders(s);
 			break;
 
 		case RDP_UPDATE_BITMAP:
-            info("RDP_UPDATE_BITMAP");
 			process_bitmap_updates(s);
 			break;
 
 		case RDP_UPDATE_PALETTE:
-            info("RDP_UPDATE_PALETTE");
 			process_palette(s);
 			break;
 
 		case RDP_UPDATE_SYNCHRONIZE:
-            info("RDP_UPDATE_SYNCHRONIZE");
 			break;
 
 		default:
@@ -681,22 +677,18 @@ process_data_pdu(STREAM s)
 	switch (data_pdu_type)
 	{
 		case RDP_DATA_PDU_UPDATE:
-            info("RDP_DATA_PDU_UPDATE");
 			process_update_pdu(s);
 			break;
 
 		case RDP_DATA_PDU_POINTER:
-            info("RDP_DATA_PDU_POINTER");
 			process_pointer_pdu(s);
 			break;
 
 		case RDP_DATA_PDU_BELL:
-            info("RDP_DATA_PDU_BELL");
 			ui_bell();
 			break;
 
 		case RDP_DATA_PDU_LOGON:
-            info("RDP_DATA_PDU_LOGON");
 			/* User logged on */
 			break;
 

@@ -51,7 +51,6 @@ iso_recv_msg(uint8 * code)
 	uint8 version;
 
     s = tcp_recv(4);
-    //info(s);
 	if (s == NULL)
 		return NULL;
 
@@ -66,7 +65,6 @@ iso_recv_msg(uint8 * code)
 	in_uint16_be(s, length);
 
 	s = tcp_recv(length - 4);
-    //info(s);
 	if (s == NULL)
 		return NULL;
 
@@ -126,7 +124,6 @@ iso_recv(void)
 	if (s == NULL)
 		return NULL;
 
-    //warning("%d", code);
 	if (code != ISO_PDU_DT)
 	{
         error("expected DT, got 0x%x\n", code);

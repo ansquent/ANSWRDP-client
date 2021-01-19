@@ -71,7 +71,7 @@ static FONTGLYPH fontcache[12][256];
 FONTGLYPH *
 cache_get_font(uint8 font, uint16 character)
 {
-	FONTGLYPH *glyph;
+    FONTGLYPH *glyph;
 
 	if ((font < NUM_ELEMENTS(fontcache)) && (character < NUM_ELEMENTS(fontcache[0])))
 	{
@@ -80,7 +80,7 @@ cache_get_font(uint8 font, uint16 character)
 			return glyph;
 	}
 
-	error("get font %d:%d\n", font, character);
+    error("get font %d:%d\n", font, character);
 	return NULL;
 }
 

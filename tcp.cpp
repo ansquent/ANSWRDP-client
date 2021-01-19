@@ -18,13 +18,6 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-// #include <unistd.h>		/* select read write close */
-// #include <sys/socket.h>		/* socket connect setsockopt */
-// #include <sys/time.h>		/* timeval */
-// #include <netdb.h>		/* gethostbyname */
-// #include <netinet/in.h>		/* sockaddr_in */
-// #include <netinet/tcp.h>	/* TCP_NODELAY */
-// #include <arpa/inet.h>		/* inet_addr */
 #include <errno.h>		/* errno */
 #include "rdesktop.h"
 #include <exception.h>
@@ -32,7 +25,6 @@
 #include <QHostInfo>
 #include <QDebug>
 
-//static int sock;
 QTcpSocket * sock;
 static struct stream in;
 static struct stream out;
@@ -42,7 +34,6 @@ extern int tcp_port_rdp;
 STREAM
 tcp_init(int maxlen)
 {
-    //throw not_implemented_error();
     if (maxlen > out.size)
     {
         out.data = (unsigned char *)xrealloc(out.data, maxlen);
@@ -63,7 +54,6 @@ tcp_send(STREAM s)
 
     while (total < length)
     {
-        //sent = send(sock, s->data + total, length - total, 0);
         sent = sock->write((char *)(s->data + total), length - total);
         if (sent <= 0)
         {
@@ -75,7 +65,6 @@ tcp_send(STREAM s)
     if (!sock->waitForBytesWritten(3000)){
         error("Error: waitForBytesWritten Failed.");
     }
-    info("sent %d bytes", length);
 }
 
 /* Receive a message on the TCP layer */
@@ -91,17 +80,13 @@ tcp_recv(unsigned length)
     in.end = in.p = in.data;
     while (length > 0)
     {
-        info("avaliable %d", sock->bytesAvailable());
-        info("length %d", length);
         if (sock->bytesAvailable() <= 0){
             if (!sock->waitForReadyRead(3000)){
                 warning("Error: waitForReadyRead Failed.");
                 return nullptr;
             }
         }
-        //rcvd = recv(sock, in.end, length, 0);
         rcvd = sock->read((char *)in.end, length);
-        info("received %d bytes", rcvd);
         if (rcvd <= 0)
         {
             error("recv: %s", strerror(errno));
@@ -116,10 +101,8 @@ tcp_recv(unsigned length)
 BOOL
 tcp_connect(char *server)
 {
-    //throw not_implemented_error();
     QHostInfo host = QHostInfo::fromName(QString(server));
     sock->connectToHost(server, tcp_port_rdp);
-    info(server);
     if (!sock->waitForConnected(30000)){
         qDebug() << sock->errorString();
         error("Error: WaitForConnected Failed.");
@@ -137,7 +120,6 @@ tcp_connect(char *server)
 void
 tcp_disconnect(void)
 {
-    //throw not_implemented_error();
     sock->disconnectFromHost();
     if (!sock->waitForDisconnected()){
         qDebug() << sock->errorString();

@@ -724,8 +724,6 @@ process_fontcache(STREAM s)
 	in_uint8(s, font);
 	in_uint8(s, nglyphs);
 
-	DEBUG(("FONTCACHE(font=%d,n=%d)\n", font, nglyphs));
-
 	for (i = 0; i < nglyphs; i++)
 	{
 		in_uint16_le(s, character);
