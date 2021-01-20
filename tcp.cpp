@@ -121,8 +121,4 @@ void
 tcp_disconnect(void)
 {
     sock->disconnectFromHost();
-    if (!sock->waitForDisconnected()){
-        qDebug() << sock->errorString();
-        error("Error: WaitForDisconnected Failed.");
-    }
 }

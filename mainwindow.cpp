@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->setInterval(100);
+    timer->setInterval(10);
     timer->start();
 
     sock = new QTcpSocket();

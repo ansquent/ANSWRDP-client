@@ -32,6 +32,8 @@
 #include <QVector>
 #include <QRgb>
 #include <algorithm>
+#include <QDebug>
+#include <QBitmap>
 
 extern int width;
 extern int height;
@@ -77,9 +79,10 @@ static QPainter::CompositionMode rop2_map[] = {
     QPainter::RasterOp_NotSourceOrDestination,		/* DPno */
     QPainter::CompositionMode_Source,			/* P */
     QPainter::RasterOp_SourceOrNotDestination,		/* PDno */
-    QPainter::RasterOp_SourceXorDestination,			/* DPo */
+    QPainter::RasterOp_SourceOrDestination,			/* DPo */
     QPainter::RasterOp_SetDestination			/* 1 */
 };
+
 
 static std::map<int, QImage::Format> bit_to_format;
 
@@ -157,6 +160,7 @@ mwm_hide_decorations(void)
 BOOL
 get_key_state(unsigned int state, uint32 keysym)
 {
+    assert(state == keysym);
     throw not_implemented_error();
 }
 
@@ -166,7 +170,8 @@ ui_init(MainWindow * w)
     window = w;
     window->setFixedSize(width, height);
     window->getPanel()->setGeometry(0, 0, width, height);
-    pixmap = new QPixmap(width, height);
+    pixmap = new QPixmap(width, height);    
+    window->getPanel()->setPixmap(*pixmap);
     window->show();
 
     bit_to_format[8] = QImage::Format_Grayscale8;
@@ -179,7 +184,7 @@ ui_init(MainWindow * w)
 void
 ui_deinit(void)
 {
-    throw not_implemented_error();
+    return;
 }
 
 BOOL
@@ -191,7 +196,7 @@ ui_create_window(void)
 void
 ui_destroy_window(void)
 {
-    throw not_implemented_error();
+    return;
 }
 
 void
@@ -200,40 +205,30 @@ xwin_toggle_fullscreen(void)
     throw not_implemented_error();
 }
 
-/* Process all events in Xlib queue
-   Returns 0 after user quit, 1 otherwise */
-static int
-xwin_process_events(void)
-{
-    throw not_implemented_error();
-}
 
 /* Returns 0 after user quit, 1 otherwise */
 int
 ui_select(int rdp_socket)
 {
+    assert(rdp_socket == 0);
     throw not_implemented_error();
 }
 
 void
 ui_move_pointer(int x, int y)
 {
+    assert(x == y);
     throw not_implemented_error();
 }
 
 HRDPBITMAP
 ui_create_bitmap(int width, int height, uint8 * data)
 {
-    QPixmap *bitmap;
     QImage *image;
     uint8 *tdata;
-
     tdata = translate_image(width, height, data);
-    bitmap = new QPixmap();
     image = new QImage(tdata, width, height, bit_to_format[bpp]);
-    *bitmap = QPixmap::fromImage(*image);
-    free(tdata);
-    return bitmap;
+    return image;
 }
 
 void
@@ -241,10 +236,10 @@ ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, uint8 * dat
 {
     uint8 *tdata;
     tdata = translate_image(width, height, data);
-    QImage * image = new QImage(data, width, height, bit_to_format[bpp]);
+    QImage * image = new QImage(tdata, width, height, bit_to_format[bpp]);
     QPainter *painter = new QPainter(pixmap);
     QRect srcRect(0, 0, cx, cy), destRect(x, y, cx, cy);
-    painter->drawImage(destRect, *image, srcRect);
+    painter->drawImage(destRect, *image, srcRect); 
     window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
     delete painter;
@@ -253,22 +248,61 @@ ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, uint8 * dat
 void
 ui_destroy_bitmap(HRDPBITMAP bmp)
 {
+    uint8 * data = (uint8 *)bmp->constBits();
     delete bmp;
+    free(data);
+}
+
+#include <stdio.h>
+void print_to_file(const char * filename, uchar * data, int width, int height) {
+    FILE * fp = fopen(filename, "w");
+    if (!fp) {
+        perror("ERROR");
+    }
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            fprintf(fp, "%s ", data[i * width + j] ? "@" : " ");
+        }
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+}
+void print_data(const char * filename, const uchar * data, int size) {
+    FILE * fp = fopen(filename, "w");
+    if (!fp) {
+        perror("ERROR");
+    }
+    for (int i = 0; i < size; ++i) {
+        fprintf(fp, "%d ", (int)data[i]);
+    }
+    printf("\n");
+    fclose(fp);
 }
 
 HGLYPH
 ui_create_glyph(int width, int height, uint8 * data)
 {
-    QImage *image;
-    QPixmap *bitmap = new QPixmap();
-    int scanline;
-
-    scanline = (width + 7) / 8;
-    image = new QImage(data, width, height, QImage::Format_Mono); /* MSBFirst */
-
-    *bitmap = QPixmap::fromImage(*image);
-    delete image;
-    return bitmap;
+    uint8 * convdata = new uint8[width * height];
+    memset(convdata, 0, sizeof(uint8) * width * height);
+    for (int i = 0; i < height; i++)
+    {
+      for (int j = 0; j < width; j++)
+      {
+        int Lwidth = (width + 7) / 8;
+        int start = (i * Lwidth) + j / 8;
+        int shift = j % 8;
+        if ((data[start] & (0x80 >> shift)) != 0)
+        {
+            convdata[i * width + j] = 255;
+        }
+      }
+    }
+    if (width > 10) {
+        print_data("/home/user/debug.txt", data, width * height / 8);
+        print_to_file("/home/user/1.txt", convdata, width, height);
+    }
+    QImage *image = new QImage(convdata, width, height, QImage::Format_Grayscale8);
+    return image;
 }
 
 void
@@ -281,18 +315,21 @@ HRDPCURSOR
 ui_create_cursor(unsigned int x, unsigned int y, int width, int height,
                  uint8 * andmask, uint8 * xormask)
 {
-    return (HRDPCURSOR)1;
+   x = y = width = height = *andmask = *xormask;
+   return (HRDPCURSOR)1;
 }
 
 void
 ui_set_cursor(HRDPCURSOR cursor)
 {
+    assert(cursor != NULL);
     //throw not_implemented_error();
 }
 
 void
 ui_destroy_cursor(HRDPCURSOR cursor)
 {
+    assert(cursor != NULL);
     //throw not_implemented_error();
 }
 
@@ -323,12 +360,13 @@ ui_destroy_colourmap(HCOLOURMAP map)
 void
 ui_set_colourmap(HCOLOURMAP map)
 {
-    colmap = (uint32 *)map;
+    colmap = (unsigned *)map;
 }
 
 void
 ui_set_clip(int x, int y, int cx, int cy)
 {
+    assert(x = y = cx = cy);
     throw not_implemented_error();
 }
 
@@ -348,11 +386,14 @@ void
 ui_destblt(uint8 opcode,
            /* dest */ int x, int y, int cx, int cy)
 {
+    if (opcode != 12){
+        throw not_implemented_error{};
+    }
     QPainter *painter = new QPainter(pixmap);
     painter->setCompositionMode(rop2_map[opcode]);
     QBrush brush;
     brush.setStyle(Qt::BrushStyle::SolidPattern);
-    painter->fillRect(x, y, cx, cy, brush);
+    painter->fillRect(x, y, cx, cy, brush); 
     window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
     delete painter;
@@ -363,7 +404,8 @@ ui_patblt(uint8 opcode,
           /* dest */ int x, int y, int cx, int cy,
           /* brush */ BRUSH * brush, int bgcolour, int fgcolour)
 {
-    QPixmap * fill;
+    return;
+    QPixmap * fill = new QBitmap();
     uint8 ipattern[8];
     QPainter *painter = new QPainter(pixmap);
     painter->setCompositionMode(rop2_map[opcode]);
@@ -371,20 +413,20 @@ ui_patblt(uint8 opcode,
     QPen pen;
     switch(brush->style){
     case 0:
+        realBrush.setColor(colmap[fgcolour]);
         realBrush.setStyle(Qt::BrushStyle::SolidPattern);
-        realBrush.setColor(fgcolour);
         painter->setBrush(realBrush);
         painter->fillRect(x, y, cx, cy, realBrush);
         break;
     case 3:
-        fill = ui_create_glyph(8, 8, ipattern);
+        *fill = QBitmap::fromImage(*ui_create_glyph(8, 8, ipattern));
+        realBrush.setColor(colmap[fgcolour]);
         realBrush.setTexture(*fill);
         realBrush.setStyle(Qt::BrushStyle::TexturePattern);
         painter->setBrush(realBrush);
         painter->fillRect(x, y, cx, cy, realBrush);
         break;
-    }
-
+    } 
     window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
     delete painter;
@@ -395,6 +437,7 @@ ui_screenblt(uint8 opcode,
              /* dest */ int x, int y, int cx, int cy,
              /* src */ int srcx, int srcy)
 {
+    assert(opcode = x = y = cx = cy = srcx = srcy);
     throw not_implemented_error();
 }
 
@@ -403,11 +446,14 @@ ui_memblt(uint8 opcode,
           /* dest */ int x, int y, int cx, int cy,
           /* src */ HRDPBITMAP src, int srcx, int srcy)
 {
-    QImage image = src->toImage();
+    if (opcode != 12){
+        throw not_implemented_error{};
+    }
     QPainter *painter = new QPainter(pixmap);
     painter->setCompositionMode(rop2_map[opcode]);
     QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
-    painter->drawImage(destRect, image, srcRect);
+    painter->drawImage(destRect, *src, srcRect);
+    window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
     delete painter;
 }
@@ -420,7 +466,9 @@ ui_triblt(uint8 opcode,
 {
     /* This is potentially difficult to do in general. Until someone
        comes up with a more efficient way of doing it I am using cases. */
-
+    if (opcode != 12){
+        throw not_implemented_error{};
+    }
     switch (opcode)
     {
     case 0x69:	/* PDSxxn */
@@ -453,9 +501,10 @@ ui_line(uint8 opcode,
     QPainter *painter = new QPainter(pixmap);
     painter->setCompositionMode(rop2_map[opcode]);
     QPen mypen;
-    mypen.setColor(pen->colour);
+    mypen.setColor(colmap[pen->colour]);
     painter->setPen(mypen);
-    painter->drawLine(startx, starty, endx, endy);
+    painter->drawLine(startx, starty, endx, endy); 
+    window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
     delete painter;
 }
@@ -466,38 +515,36 @@ ui_rect(
         /* brush */ int colour)
 {
     QPainter *painter = new QPainter(pixmap);
-    QPen mypen;
-    mypen.setColor(colour);
-    painter->setPen(mypen);
-    painter->drawRect(x, y, cx, cy);
+    QBrush realBrush;
+    realBrush.setColor(colmap[colour]);
+    realBrush.setStyle(Qt::BrushStyle::SolidPattern);
+    painter->setBrush(realBrush);
+    painter->fillRect(x, y, cx, cy, realBrush); 
+    window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
     delete painter;
 }
 
 void
-ui_draw_glyph(int mixmode,
-              /* dest */ int x, int y, int cx, int cy,
-              /* src */ HGLYPH glyph, int srcx, int srcy,
-              int bgcolour, int fgcolour)
+draw_glyph(int x, int y, QImage * glyphImage, int fgcolor)
 {
-//    QImage glyphImage = glyph->toImage().convertToFormat(bit_to_format[bpp]);
-//    for (int i = 0; i < glyphImage.width(); ++i){
-//        for (int j = 0; j < glyphImage.height(); ++j){
-//            if (glyphImage.pixel(srcx + i, srcy + j) == 0 && mixmode != MIX_TRANSPARENT)
-//                    glyphImage.setPixel(srcx + i, srcy + j, bgcolour);
-//            else
-//                glyphImage.setPixel(srcx + i, srcy + j, fgcolour);
-//        }
-//    }
-    QPainter *painter = new QPainter(pixmap);
-    QBrush realBrush;
-    realBrush.setColor(bgcolour);
-    realBrush.setTexture(*glyph);
-    realBrush.setStyle(Qt::BrushStyle::TexturePattern);
-    painter->setBrush(realBrush);
-    painter->fillRect(x, y, cx, cy, realBrush);
-    window->getPanel()->repaint();
-    delete painter;
+    const uchar * glyph_data = glyphImage->constBits();
+    QImage image = pixmap->toImage();
+    int g_width = pixmap->width(), g_height = pixmap->height(), g_Bpp = image.depth() / 8;
+    int glyph_width = glyphImage->width();
+    int glyph_height = glyphImage->height();
+    uchar * g_bs = new uchar[g_width * g_height * g_Bpp * sizeof(uchar)];
+    memcpy(g_bs, image.constBits(), g_width * g_height * g_Bpp * sizeof(uchar));
+    for (int i = 0; i < glyph_height; ++i){
+        for (int j = 0; j < glyph_width; ++j){
+            if (glyph_data[i * glyph_width + j] != 0){
+                uchar * p = g_bs + ((y + i) * g_width * g_Bpp) + ((x + j) * g_Bpp);
+                *((unsigned int *) p) = colmap[fgcolor];
+            }
+        }
+    }
+    image = QImage(g_bs, image.width(), image.height(), image.format());
+    *pixmap = QPixmap::fromImage(image);
 }
 
 void DO_GLYPH(uint8 & font, unsigned char * ttext, int & idx,
@@ -525,10 +572,8 @@ void DO_GLYPH(uint8 & font, unsigned char * ttext, int & idx,
     }
     if (glyph != NULL)
     {
-        ui_draw_glyph(mixmode, x + glyph->offset,
-                       y + glyph->baseline,
-                       glyph->width, glyph->height,
-                       glyph->pixmap, 0, 0, bgcolour, fgcolour);
+        draw_glyph(x + glyph->offset, y + glyph->baseline, glyph->pixmap,
+                      fgcolour);
         if (flags & TEXT2_IMPLICIT_X)
             x += glyph->width;
     }
@@ -546,7 +591,7 @@ ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y,
     QPainter *painter = new QPainter(pixmap);
     QBrush realBrush;
     realBrush.setStyle(Qt::BrushStyle::SolidPattern);
-    realBrush.setColor(bgcolour);
+    realBrush.setColor(colmap[bgcolour]);
     painter->setBrush(realBrush);
     if (boxcx > 1)
     {
@@ -609,7 +654,8 @@ ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y,
             i++;
             break;
         }
-    }
+    } 
+    window->getPanel()->setPixmap(*pixmap);
     window->getPanel()->repaint();
 }
 
@@ -630,6 +676,5 @@ ui_desktop_restore(uint32 offset, int x, int y, int cx, int cy)
     offset *= bpp / 8;
     uint8 * data = cache_get_desktop(offset, cx, cy, bpp / 8);
     QImage image(data, width, height, bit_to_format[bpp]);
-    QPixmap pixmap = QPixmap::fromImage(image);
-    ui_memblt(12, x, y, cx, cy, &pixmap, 0, 0);
+    ui_memblt(12, x, y, cx, cy, &image, 0, 0);
 }

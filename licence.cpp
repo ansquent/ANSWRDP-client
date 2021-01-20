@@ -228,6 +228,7 @@ licence_parse_authreq(STREAM s, uint8 ** token, uint8 ** signature)
 static void
 licence_process_authreq(STREAM s)
 {
+    assert(s == NULL);
     throw not_implemented_error();
 }
 
@@ -235,6 +236,7 @@ licence_process_authreq(STREAM s)
 static void
 licence_process_issue(STREAM s)
 {
+    assert(s == NULL);
     throw not_implemented_error();
 }
 

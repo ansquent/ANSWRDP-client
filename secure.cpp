@@ -25,8 +25,10 @@
 #include "third_party/openssl/sha.h"
 #include "third_party/openssl/bn.h"
 
+#ifdef _WIN32
 #pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libcrypto.lib")
 #pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libssl.lib")
+#endif
 
 extern char hostname[16];
 extern int width;
