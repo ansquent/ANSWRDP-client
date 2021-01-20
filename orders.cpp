@@ -20,9 +20,11 @@
 
 #include "rdesktop.h"
 #include "orders.h"
+#include "xwin.h"
 
 extern uint8 *next_packet;
 static RDP_ORDER_STATE order_state;
+extern UI * xwin_ui;
 
 /* Read field indicating which parameters are present */
 static void
@@ -168,7 +170,7 @@ process_destblt(STREAM s, DESTBLT_ORDER * os, uint32 present, BOOL delta)
 	DEBUG(("DESTBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d)\n",
 	       os->opcode, os->x, os->y, os->cx, os->cy));
 
-	ui_destblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy);
+	xwin_ui->ui_destblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy);
 }
 
 /* Process a pattern blt order */
@@ -201,7 +203,7 @@ process_patblt(STREAM s, PATBLT_ORDER * os, uint32 present, BOOL delta)
 	DEBUG(("PATBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,bs=%d,bg=0x%x,fg=0x%x)\n", os->opcode, os->x,
 	       os->y, os->cx, os->cy, os->brush.style, os->bgcolour, os->fgcolour));
 
-	ui_patblt(ROP2_P(os->opcode), os->x, os->y, os->cx, os->cy,
+	xwin_ui->ui_patblt(ROP2_P(os->opcode), os->x, os->y, os->cx, os->cy,
 		  &os->brush, os->bgcolour, os->fgcolour);
 }
 
@@ -233,7 +235,7 @@ process_screenblt(STREAM s, SCREENBLT_ORDER * os, uint32 present, BOOL delta)
 	DEBUG(("SCREENBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,srcx=%d,srcy=%d)\n",
 	       os->opcode, os->x, os->y, os->cx, os->cy, os->srcx, os->srcy));
 
-	ui_screenblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
+	xwin_ui->ui_screenblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
 }
 
 /* Process a line order */
@@ -272,7 +274,7 @@ process_line(STREAM s, LINE_ORDER * os, uint32 present, BOOL delta)
 		return;
 	}
 
-	ui_line(os->opcode - 1, os->startx, os->starty, os->endx, os->endy, &os->pen);
+	xwin_ui->ui_line(os->opcode - 1, os->startx, os->starty, os->endx, os->endy, &os->pen);
 }
 
 /* Process an opaque rectangle order */
@@ -296,7 +298,7 @@ process_rect(STREAM s, RECT_ORDER * os, uint32 present, BOOL delta)
 
 	DEBUG(("RECT(x=%d,y=%d,cx=%d,cy=%d,fg=0x%x)\n", os->x, os->y, os->cx, os->cy, os->colour));
 
-	ui_rect(os->x, os->y, os->cx, os->cy, os->colour);
+	xwin_ui->ui_rect(os->x, os->y, os->cx, os->cy, os->colour);
 }
 
 /* Process a desktop save order */
@@ -330,9 +332,9 @@ process_desksave(STREAM s, DESKSAVE_ORDER * os, uint32 present, BOOL delta)
 	height = os->bottom - os->top + 1;
 
 	if (os->action == 0)
-		ui_desktop_save(os->offset, os->left, os->top, width, height);
+		xwin_ui->ui_desktop_save(os->offset, os->left, os->top, width, height);
 	else
-		ui_desktop_restore(os->offset, os->left, os->top, width, height);
+		xwin_ui->ui_desktop_restore(os->offset, os->left, os->top, width, height);
 }
 
 /* Process a memory blt order */
@@ -378,7 +380,7 @@ process_memblt(STREAM s, MEMBLT_ORDER * os, uint32 present, BOOL delta)
 	if (bitmap == NULL)
 		return;
 
-	ui_memblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, bitmap, os->srcx, os->srcy);
+	xwin_ui->ui_memblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, bitmap, os->srcx, os->srcy);
 }
 
 /* Process a 3-way blt order */
@@ -436,7 +438,7 @@ process_triblt(STREAM s, TRIBLT_ORDER * os, uint32 present, BOOL delta)
 	if (bitmap == NULL)
 		return;
 
-	ui_triblt(os->opcode, os->x, os->y, os->cx, os->cy,
+	xwin_ui->ui_triblt(os->opcode, os->x, os->y, os->cx, os->cy,
 		  bitmap, os->srcx, os->srcy, &os->brush, os->bgcolour, os->fgcolour);
 }
 
@@ -530,7 +532,7 @@ process_polyline(STREAM s, POLYLINE_ORDER * os, uint32 present, BOOL delta)
 		if (flags & 0x80)
 			y += parse_delta(os->data, &data);
 
-		ui_line(opcode, xfrom, yfrom, x, y, &pen);
+		xwin_ui->ui_line(opcode, xfrom, yfrom, x, y, &pen);
 
 		flags <<= 2;
 	}
@@ -605,7 +607,7 @@ process_text2(STREAM s, TEXT2_ORDER * os, uint32 present, BOOL delta)
 
 	DEBUG(("\n"));
 
-	ui_draw_text(os->font, os->flags, os->mixmode, os->x, os->y,
+	xwin_ui->ui_draw_text(os->font, os->flags, os->mixmode, os->x, os->y,
 		     os->clipleft, os->cliptop,
 		     os->clipright - os->clipleft,
 		     os->clipbottom - os->cliptop,
@@ -640,7 +642,7 @@ process_raw_bmpcache(STREAM s)
 		memcpy(&inverted[(height - y - 1) * width], &data[y * width], width);
 	}
 
-	bitmap = ui_create_bitmap(width, height, inverted);
+	bitmap = xwin_ui->ui_create_bitmap(width, height, inverted);
 	xfree(inverted);
 	cache_put_bitmap(cache_id, cache_idx, bitmap);
 }
@@ -672,7 +674,7 @@ process_bmpcache(STREAM s)
 
 	if (bitmap_decompress(bmpdata, width, height, data, size))
 	{
-		bitmap = ui_create_bitmap(width, height, bmpdata);
+		bitmap = xwin_ui->ui_create_bitmap(width, height, bmpdata);
 		cache_put_bitmap(cache_id, cache_idx, bitmap);
 	}
 
@@ -705,8 +707,7 @@ process_colcache(STREAM s)
 
 	DEBUG(("COLCACHE(id=%d,n=%d)\n", cache_id, map.ncolours));
 
-	hmap = ui_create_colourmap(&map);
-	ui_set_colourmap(hmap);
+    xwin_ui->ui_create_colourmap(&map);
 
 	xfree(map.colours);
 }
@@ -735,7 +736,7 @@ process_fontcache(STREAM s)
 		datasize = (height * ((width + 7) / 8) + 3) & ~3;
 		in_uint8p(s, data, datasize);
 
-		bitmap = ui_create_glyph(width, height, data);
+		bitmap = xwin_ui->ui_create_glyph(width, height, data);
 		cache_put_font(font, character, offset, baseline, width, height, bitmap);
 	}
 }
@@ -839,7 +840,7 @@ process_orders(STREAM s)
 				if (!(order_flags & RDP_ORDER_LASTBOUNDS))
 					rdp_parse_bounds(s, &os->bounds);
 
-				ui_set_clip(os->bounds.left,
+				xwin_ui->ui_set_clip(os->bounds.left,
 					    os->bounds.top,
 					    os->bounds.right -
 					    os->bounds.left + 1,
@@ -896,7 +897,7 @@ process_orders(STREAM s)
 			}
 
 			if (order_flags & RDP_ORDER_BOUNDS)
-				ui_reset_clip();
+				xwin_ui->ui_reset_clip();
 		}
 
 		processed++;

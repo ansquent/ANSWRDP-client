@@ -8,8 +8,10 @@
 #include <QPaintEvent>
 #include <QTcpSocket>
 #include "constants.h"
+#include "xwin.h"
 
 extern QTcpSocket * sock;
+UI * xwin_ui;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -30,15 +32,10 @@ MainWindow::MainWindow(QWidget *parent)
     char password[256] = "123456";
     char shell[256] = {0};
     char directory[256] = {0};
-    if (!ui_init(this))
-        error("ui_init failed");
     if (!rdp_connect(server, flags, domain, password, shell, directory))
         error("rdp_connect failed");
     memset(password, 0, sizeof(password));
-    if (!ui_create_window())
-    {
-        error("ui_create_window failed");
-    }
+    xwin_ui = new UI(this, 800, 600, 32);
 }
 
 void MainWindow::update(){
@@ -51,9 +48,8 @@ QLabel * MainWindow::getPanel(){
 
 MainWindow::~MainWindow()
 {
-    ui_destroy_window();
     rdp_disconnect();
-    ui_deinit();
+    delete xwin_ui;
     delete ui;
 }
 

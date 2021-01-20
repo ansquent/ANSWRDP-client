@@ -39,7 +39,8 @@ HEADERS += \
     proto.h \
     rdesktop.h \
     scancodes.h \
-    types.h
+    types.h \
+    xwin.h
 
 FORMS += \
     mainwindow.ui

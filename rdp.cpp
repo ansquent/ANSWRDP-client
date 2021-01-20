@@ -19,6 +19,7 @@
 */
 
 #include "rdesktop.h"
+#include "xwin.h"
 
 extern uint16 mcs_userid;
 extern char username[16];
@@ -26,6 +27,7 @@ extern BOOL bitmap_compression;
 extern BOOL orders;
 extern BOOL encryption;
 extern BOOL desktop_save;
+extern UI * xwin_ui;
 
 uint8 *next_packet;
 uint32 rdp_shareid;
@@ -518,7 +520,7 @@ process_pointer_pdu(STREAM s)
 			in_uint16_le(s, x);
 			in_uint16_le(s, y);
 			if (s_check(s))
-				ui_move_pointer(x, y);
+				xwin_ui->ui_move_pointer(x, y);
 			break;
 
 		case RDP_POINTER_COLOR:
@@ -531,14 +533,14 @@ process_pointer_pdu(STREAM s)
 			in_uint16_le(s, datalen);
 			in_uint8p(s, data, datalen);
 			in_uint8p(s, mask, masklen);
-			cursor = ui_create_cursor(x, y, width, height, mask, data);
-			ui_set_cursor(cursor);
+			cursor = xwin_ui->ui_create_cursor(x, y, width, height, mask, data);
+			xwin_ui->ui_set_cursor(cursor);
 			cache_put_cursor(cache_idx, cursor);
 			break;
 
 		case RDP_POINTER_CACHED:
 			in_uint16_le(s, cache_idx);
-			ui_set_cursor(cache_get_cursor(cache_idx));
+			xwin_ui->ui_set_cursor(cache_get_cursor(cache_idx));
 			break;
 
 		default:
@@ -584,7 +586,7 @@ process_bitmap_updates(STREAM s)
 			{
 				in_uint8a(s, &bmpdata[(height - y - 1) * width], width);
 			}
-			ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
+			xwin_ui->ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
 			xfree(bmpdata);
 			continue;
 		}
@@ -597,7 +599,7 @@ process_bitmap_updates(STREAM s)
 		bmpdata = (uint8 *)xmalloc(width * height);
 		if (bitmap_decompress(bmpdata, width, height, data, size))
 		{
-			ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
+			xwin_ui->ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
 		}
 
 		xfree(bmpdata);
@@ -627,8 +629,7 @@ process_palette(STREAM s)
 		in_uint8(s, entry->blue);
 	}
 
-	hmap = ui_create_colourmap(&map);
-	ui_set_colourmap(hmap);
+    xwin_ui->ui_create_colourmap(&map);
 
 	xfree(map.colours);
 }
@@ -685,7 +686,7 @@ process_data_pdu(STREAM s)
 			break;
 
 		case RDP_DATA_PDU_BELL:
-			ui_bell();
+			xwin_ui->ui_bell();
 			break;
 
 		case RDP_DATA_PDU_LOGON:

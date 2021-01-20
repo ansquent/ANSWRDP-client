@@ -19,10 +19,11 @@
 */
 
 #include "rdesktop.h"
+#include "xwin.h"
 
 #define NUM_ELEMENTS(array) (sizeof(array) / sizeof(array[0]))
 
-
+extern UI * xwin_ui;
 /* BITMAP CACHE */
 static HRDPBITMAP bmpcache[3][600];
 
@@ -53,7 +54,7 @@ cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HRDPBITMAP bitmap)
 	{
 		old = bmpcache[cache_id][cache_idx];
 		if (old != NULL)
-			ui_destroy_bitmap(old);
+			xwin_ui->ui_destroy_bitmap(old);
 
 		bmpcache[cache_id][cache_idx] = bitmap;
 	}
@@ -95,7 +96,7 @@ cache_put_font(uint8 font, uint16 character, uint16 offset,
 	{
 		glyph = &fontcache[font][character];
 		if (glyph->pixmap != NULL)
-			ui_destroy_glyph(glyph->pixmap);
+			xwin_ui->ui_destroy_glyph(glyph->pixmap);
 
 		glyph->offset = offset;
 		glyph->baseline = baseline;
@@ -224,7 +225,7 @@ cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor)
 	{
 		old = cursorcache[cache_idx];
 		if (old != NULL)
-			ui_destroy_cursor(old);
+			xwin_ui->ui_destroy_cursor(old);
 
 		cursorcache[cache_idx] = cursor;
 	}
