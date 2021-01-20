@@ -1,8 +1,6 @@
 #include "mainwindow.h"
-
 #include <QApplication>
 #include "rdesktop.h"
-#include <QThread>
 
 int main(int argc, char *argv[])
 {

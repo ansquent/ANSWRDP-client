@@ -25,6 +25,7 @@
 #include "rdesktop.h"
 #include "scancodes.h"
 #include <exception.h>
+#include <QMouseEvent>
 
 #define KEYMAP_SIZE 0xffff+1
 #define KEYMAP_MASK 0xffff
@@ -65,9 +66,10 @@ xkeymap_init(void)
 /* Handles, for example, multi-scancode keypresses (which is not
    possible via keymap-files) */
 BOOL
-handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, BOOL pressed)
+handle_special_keys(int key, uint32 ev_time, BOOL pressed)
 {
-	throw not_implemented_error();
+    //throw not_implemented_error();
+    return False;
 }
 
 
@@ -78,9 +80,19 @@ xkeymap_translate_key(uint32 keysym, unsigned int keycode, unsigned int state)
 }
 
 uint16
-xkeymap_translate_button(unsigned int button)
+xkeymap_translate_button(Qt::MouseButton button)
 {
-	throw not_implemented_error();
+    switch (button)
+    {
+        case Qt::MouseButton::LeftButton:	/* left */
+            return MOUSE_FLAG_BUTTON1;
+        case Qt::MouseButton::MidButton:	/* middle */
+            return MOUSE_FLAG_BUTTON3;
+        case Qt::MouseButton::RightButton:	/* right */
+            return MOUSE_FLAG_BUTTON2;
+    }
+
+    return 0;
 }
 
 char *

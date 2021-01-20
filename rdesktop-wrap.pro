@@ -42,8 +42,7 @@ HEADERS += \
     types.h \
     xwin.h
 
-FORMS += \
-    mainwindow.ui
+FORMS +=
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -52,3 +51,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 unix:!macx: LIBS += -lcrypto
 unix:!macx: LIBS += -lssl
+CONFIG += console

@@ -81,7 +81,7 @@ tcp_recv(unsigned length)
     while (length > 0)
     {
         if (sock->bytesAvailable() <= 0){
-            if (!sock->waitForReadyRead(3000)){
+            if (!sock->waitForReadyRead(-1)){
                 warning("Error: waitForReadyRead Failed.");
                 return nullptr;
             }

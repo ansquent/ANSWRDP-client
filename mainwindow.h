@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QThread>
 #include <QTimer>
+#include <QEvent>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -19,15 +20,18 @@ public:
     MainWindow(QWidget *parent = nullptr);
     QLabel * getPanel();
     ~MainWindow();
-signals:
-    void done();
-public slots:
-    void update();
+    int exec();
 
 private:
-    Ui::MainWindow *ui;
     QLabel * panel;
-    QTimer * timer;
+
+protected:
+    void keyPressEvent(QKeyEvent * event);
+    void keyReleaseEvent(QKeyEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 };
 
 #endif // MAINWINDOW_H

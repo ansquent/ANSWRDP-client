@@ -233,14 +233,13 @@ UI::ui_create_colourmap(COLOURMAP * colours)
 void
 UI::ui_set_clip(int x, int y, int cx, int cy)
 {
-    assert(x = y = cx = cy);
-    throw not_implemented_error();
+    return;
 }
 
 void
 UI::ui_reset_clip(void)
 {
-    throw not_implemented_error();
+    return;
 }
 
 void
