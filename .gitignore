@@ -1,2 +1,4 @@
 *.pro.user
 .vscode/*
+cmake-build-debug/*
+.idea/*
