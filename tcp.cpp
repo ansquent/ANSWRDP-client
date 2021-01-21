@@ -18,25 +18,24 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <errno.h>		/* errno */
-#include "rdesktop.h"
-#include <exception.h>
+#include <cerrno>        /* errno */
 #include <QTcpSocket>
 #include <QHostInfo>
-#include <QDebug>
+#include "tcp.h"
+#include <iostream>
 
-QTcpSocket * sock;
-static struct stream in;
-static struct stream out;
-extern int tcp_port_rdp;
+void info(const char *format, ...);
+
+TcpTool::TcpTool() {
+    sock = new QTcpSocket();
+    tcp_port_rdp = TCP_PORT_RDP;
+}
 
 /* Initialise TCP transport data packet */
-STREAM
-tcp_init(int maxlen)
-{
-    if (maxlen > out.size)
-    {
-        out.data = (unsigned char *)xrealloc(out.data, maxlen);
+STREAM TcpTool::tcp_init(int maxlen) {
+    if (maxlen > out.size) {
+        delete out.data;
+        out.data = new unsigned char[maxlen];
         out.size = maxlen;
     }
 
@@ -46,50 +45,43 @@ tcp_init(int maxlen)
 }
 
 /* Send TCP transport data packet */
-void
-tcp_send(STREAM s)
-{
+void TcpTool::tcp_send(STREAM s) {
     int length = s->end - s->data;
     int sent, total = 0;
 
-    while (total < length)
-    {
-        sent = sock->write((char *)(s->data + total), length - total);
-        if (sent <= 0)
-        {
-            error("send: %s", strerror(errno));
+    while (total < length) {
+        sent = sock->write((char *) (s->data + total), length - total);
+        if (sent <= 0) {
+            info("send: %s", strerror(errno));
+            exit(-1);
         }
         total += sent;
     }
 
-    if (!sock->waitForBytesWritten(3000)){
-        error("Error: waitForBytesWritten Failed.");
+    if (!sock->waitForBytesWritten(3000)) {
+        info("Error: waitForBytesWritten Failed.");
     }
 }
 
 /* Receive a message on the TCP layer */
-STREAM
-tcp_recv(unsigned length)
-{
+STREAM TcpTool::tcp_recv(unsigned length) {
     int rcvd = 0;
-    if (length > in.size)
-    {
-        in.data = (unsigned char *)xrealloc(in.data, length);
+    if (length > in.size) {
+        delete in.data;
+        in.data = new unsigned char[length];
         in.size = length;
     }
     in.end = in.p = in.data;
-    while (length > 0)
-    {
-        if (sock->bytesAvailable() <= 0){
-            if (!sock->waitForReadyRead(-1)){
-                warning("Error: waitForReadyRead Failed.");
+    while (length > 0) {
+        if (sock->bytesAvailable() <= 0) {
+            if (!sock->waitForReadyRead(-1)) {
+                info("Error: waitForReadyRead Failed.");
                 return nullptr;
             }
         }
-        rcvd = sock->read((char *)in.end, length);
-        if (rcvd <= 0)
-        {
-            error("recv: %s", strerror(errno));
+        rcvd = sock->read((char *) in.end, length);
+        if (rcvd <= 0) {
+            info("recv: %s", strerror(errno));
         }
         in.end += rcvd;
         length -= rcvd;
@@ -98,27 +90,23 @@ tcp_recv(unsigned length)
 }
 
 /* Establish a connection on the TCP layer */
-BOOL
-tcp_connect(char *server)
-{
+BOOL TcpTool::tcp_connect(char *server) {
     QHostInfo host = QHostInfo::fromName(QString(server));
     sock->connectToHost(server, tcp_port_rdp);
-    if (!sock->waitForConnected(30000)){
-        qDebug() << sock->errorString();
-        error("Error: WaitForConnected Failed.");
+    if (!sock->waitForConnected(30000)) {
+        info("Error: WaitForConnected Failed. %s", sock->errorString().toStdString().c_str());
+        exit(-1);
     }
 
     in.size = 4096;
-    in.data = (unsigned char *)xmalloc(in.size);
+    in.data = new uchar[in.size];
 
     out.size = 4096;
-    out.data = (unsigned char *)xmalloc(out.size);
+    out.data = new uchar[out.size];
     return True;
 }
 
 /* Disconnect on the TCP layer */
-void
-tcp_disconnect(void)
-{
+void TcpTool::tcp_disconnect(void) {
     sock->disconnectFromHost();
 }

@@ -4,33 +4,42 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QPixmap>
-#include <QThread>
 #include <QTimer>
 #include <QEvent>
+#include "xwin.h"
+#include "client.h"
+#include "tcp.h"
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
-
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
+class MainWindow : public QMainWindow {
+Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    QLabel * getPanel();
+    explicit MainWindow(QWidget *parent = nullptr);
+
+    QLabel *getPanel();
+
     ~MainWindow();
-    int exec();
+
+public slots:
+    void update();
 
 private:
-    QLabel * panel;
+    QLabel *panel;
+    XWin_Ui *xwin_ui;
+    Client *client;
+    TcpTool *tcptool;
 
 protected:
-    void keyPressEvent(QKeyEvent * event);
+    void keyPressEvent(QKeyEvent *event);
+
     void keyReleaseEvent(QKeyEvent *event);
+
     void mouseMoveEvent(QMouseEvent *event);
+
     void mousePressEvent(QMouseEvent *event);
+
     void mouseReleaseEvent(QMouseEvent *event);
+
     void wheelEvent(QWheelEvent *event);
 };
 
