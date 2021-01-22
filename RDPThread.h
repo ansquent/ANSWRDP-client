@@ -6,21 +6,32 @@
 #define RDESKTOP_WRAP_RDPTHREAD_H
 
 #include <QThread>
+#include <QEvent>
+#include <QQueue>
+#include <QTimer>
 class XWin_Ui;
 class Client;
+class MainWindow;
 
 class RDPThread : public QThread {
-
+Q_OBJECT
 private:
     Client * client;
+    MainWindow * window;
+    QQueue<QEvent *> events;
+    QTimer * event_process_timer;
 public:
-    explicit RDPThread();
+    explicit RDPThread(MainWindow *);
 
     [[noreturn]] void run() override;
+
+    void push_event(QEvent *);
 
     Client * getClient();
 
     ~RDPThread() override;
+private slots:
+    void dispatch_message();
 };
 
 

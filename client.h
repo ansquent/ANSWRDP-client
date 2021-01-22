@@ -320,8 +320,6 @@ private:
 
     BOOL handle_special_keys(int key, uint32 ev_time, BOOL pressed);
 
-    uint16 xkeymap_translate_button(Qt::MouseButton button);
-
 public:
     Client(XWin_Ui *ui, TcpTool *tool);
 
@@ -338,6 +336,7 @@ public:
 
     void rdp_send_input(uint32 time, uint16 message_type,
                         uint16 device_flags, uint16 param1, uint16 param2);
+    uint16 xkeymap_translate_button(Qt::MouseButton button);
 
     void rdp_disconnect();
 };

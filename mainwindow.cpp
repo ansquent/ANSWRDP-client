@@ -14,9 +14,10 @@ MainWindow::MainWindow(QWidget *parent)
         : QMainWindow(parent) {
     setGeometry(QRect(0, 0, 800, 600));
     panel = new QLabel(this);
+    panel->setGeometry(0, 0, 800, 600);
     show();
 
-    rdpThread = new RDPThread();
+    rdpThread = new RDPThread(this);
     rdpThread->start();
 }
 
@@ -46,16 +47,8 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event) {
-    static int filecount = 0;
-    QString filename = QString::number(++filecount) + ".jpg";
-    info("clicked. Filename = %s", filename.toStdString().c_str());
-    rdpThread->getClient()->getUi()->getPixmap()->save(filename);
-//    uint16 flags = MOUSE_FLAG_DOWN;
-//    uint16 button = client->xkeymap_translate_button(event->button());
-//    if (button == 0)
-//        return;
-//    client->rdp_send_input(time(NULL), RDP_INPUT_MOUSE,
-//                           flags | button, event->x(), event->y());
+    info("push_back event.");
+    rdpThread->push_event(event);
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
