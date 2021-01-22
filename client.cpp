@@ -17,7 +17,7 @@ void info(const char *format, ...);
 #pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libssl.lib")
 #endif
 
-Client::Client(XWin_Ui *ui, TcpTool *tool) : canned_caps{
+Client::Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username) : canned_caps{
         0x01, 0x00, 0x00, 0x00, 0x09, 0x04, 0x00, 0x00, 0x04,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00,
@@ -37,11 +37,9 @@ Client::Client(XWin_Ui *ui, TcpTool *tool) : canned_caps{
         0xFE, 0x00, 0x80, 0x00, 0xFE,
         0x00, 0x00, 0x01, 0x40, 0x00, 0x00, 0x08, 0x00, 0x01, 0x00, 0x01,
         0x02, 0x00, 0x00, 0x00
-}, licence_issued(False), title(""), username("Administrator"),
-                                             keylayout(0x409), width(800), height(600), tcp_port_rdp(TCP_PORT_RDP),
-                                             bitmap_compression(True), sendmotion(True), orders(True), encryption(True),
-                                             desktop_save(True), fullscreen(False), grab_keyboard(True),
-                                             hide_decorations(False), remote_modifier_state(0), xwin_ui(ui),
+}, licence_issued(false), keylayout(0x409), width(800), height(600), tcp_port_rdp(TCP_PORT_RDP),
+                                             bitmap_compression(true), orders(true), encryption(true),
+                                             desktop_save(true), remote_modifier_state(0), xwin_ui(ui),
                                              tcptool(tool) {
     pad_54 = new uint8[40];
     for (int i = 0; i < 40; ++i) {
@@ -51,6 +49,8 @@ Client::Client(XWin_Ui *ui, TcpTool *tool) : canned_caps{
     for (int i = 0; i < 48; ++i) {
         pad_92[i] = 92;
     }
+    this->hostname = hostname;
+    this->username = username;
 }
 
 void Client::rdp_main_loop() {
@@ -323,7 +323,7 @@ void Client::rdp_out_order_caps(STREAM s) {
     order_caps[8] = 1;    /* line */
     order_caps[9] = 1;    /* line */
     order_caps[10] = 1;    /* rect */
-    order_caps[11] = (desktop_save == False ? 0 : 1);    /* desksave */
+    order_caps[11] = (desktop_save == false ? 0 : 1);    /* desksave */
     order_caps[13] = 1;    /* memblt */
     order_caps[14] = 1;    /* triblt */
     order_caps[22] = 1;    /* polyline */
@@ -341,7 +341,7 @@ void Client::rdp_out_order_caps(STREAM s) {
     out_uint8p(s, order_caps, 32);    /* Orders supported */
     out_uint16_le(s, 0x6a1);    /* Text capability flags */
     out_uint8s(s, 6);    /* Pad */
-    out_uint32_le(s, desktop_save == False ? 0 : 0x38400);    /* Desktop cache size */
+    out_uint32_le(s, desktop_save == false ? 0 : 0x38400);    /* Desktop cache size */
     out_uint32(s, 0);    /* Unknown */
     out_uint32_le(s, 0x4e4);    /* Unknown */
 }
@@ -561,7 +561,7 @@ void Client::process_bitmap_updates(STREAM s) {
         cy = bottom - top + 1;
 
         info("UPDATE(l=%d,t=%d,r=%d,b=%d,w=%d,h=%d,cmp=%d)\n",
-                left, top, right, bottom, width, height, compress);
+             left, top, right, bottom, width, height, compress);
 
         if (!compress) {
             int y;
@@ -667,19 +667,18 @@ void Client::process_data_pdu(STREAM s) {
             break;
 
         default:
-            info("Not implemented");
-            //throw not_implemented_error{};
+            throw not_implemented_error{};
     }
 }
 
 /* Establish a connection up to the RDP layer */
-BOOL Client::rdp_connect(char *server, uint32 flags, char *domain, char *password,
-                         char *command, char *directory) {
+BOOL Client::rdp_connect(char *server, uint32 flags, char *domain, char *password, char *command,
+                         char *directory) {
     if (!sec_connect(server))
-        return False;
+        return false;
 
-    rdp_send_logon_info(flags, domain, username, password, command, directory);
-    return True;
+    rdp_send_logon_info(flags, domain, (char *)username, password, command, directory);
+    return true;
 }
 
 /* Disconnect from the RDP layer */
@@ -699,7 +698,7 @@ BOOL Client::ber_parse_header(STREAM s, int tagval, int *length) {
 
     if (tag != tagval) {
         info("expected tag %d, got %d\n", tagval, tag);
-        return False;
+        return false;
     }
 
     in_uint8(s, len);
@@ -793,7 +792,7 @@ BOOL Client::mcs_recv_connect_response(STREAM mcs_data) {
 
     s = iso_recv();
     if (s == NULL)
-        return False;
+        return false;
 
     ber_parse_header(s, MCS_CONNECT_RESPONSE, &length);
 
@@ -801,7 +800,7 @@ BOOL Client::mcs_recv_connect_response(STREAM mcs_data) {
     in_uint8(s, result);
     if (result != 0) {
         info("MCS connect: %d\n", result);
-        return False;
+        return false;
     }
 
     ber_parse_header(s, BER_TAG_INTEGER, &length);
@@ -854,18 +853,18 @@ BOOL Client::mcs_recv_aucf(uint16 *mcs_userid) {
 
     s = iso_recv();
     if (s == NULL)
-        return False;
+        return false;
 
     in_uint8(s, opcode);
     if ((opcode >> 2) != MCS_AUCF) {
         info("expected AUcf, got %d\n", opcode);
-        return False;
+        return false;
     }
 
     in_uint8(s, result);
     if (result != 0) {
         info("AUrq: %d\n", result);
-        return False;
+        return false;
     }
 
     if (opcode & 2) in_uint16_be(s, *mcs_userid);
@@ -894,18 +893,18 @@ BOOL Client::mcs_recv_cjcf(void) {
 
     s = iso_recv();
     if (s == NULL)
-        return False;
+        return false;
 
     in_uint8(s, opcode);
     if ((opcode >> 2) != MCS_CJCF) {
         info("expected CJcf, got %d\n", opcode);
-        return False;
+        return false;
     }
 
     in_uint8(s, result);
     if (result != 0) {
         info("CJrq: %d\n", result);
-        return False;
+        return false;
     }
 
     in_uint8s(s, 4);    /* mcs_userid, req_chanid */
@@ -971,7 +970,7 @@ STREAM Client::mcs_recv(void) {
 /* Establish a connection up to the MCS layer */
 BOOL Client::mcs_connect(char *server, STREAM mcs_data) {
     if (!iso_connect(server))
-        return False;
+        return false;
 
     mcs_send_connect_initial(mcs_data);
     if (!mcs_recv_connect_response(mcs_data))
@@ -991,11 +990,11 @@ BOOL Client::mcs_connect(char *server, STREAM mcs_data) {
     if (!mcs_recv_cjcf())
         goto error;
 
-    return True;
+    return true;
 
     error:
     iso_disconnect();
-    return False;
+    return false;
 }
 
 /* Disconnect from the MCS layer */
@@ -1007,7 +1006,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
     unsigned char *end = input + size;
     unsigned char *prevline = NULL, *line = NULL;
     int opcode, count, offset, isfillormix, x = width;
-    int lastopcode = -1, insertmix = False, bicolour = False;
+    int lastopcode = -1, insertmix = false, bicolour = false;
     uint8 code, colour1 = 0, colour2 = 0;
     uint8 mixmask, mask = 0, mix = 0xff;
     int fom_mask = 0;
@@ -1063,7 +1062,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
         switch (opcode) {
             case 0:    /* Fill */
                 if ((lastopcode == opcode) && !((x == width) && (prevline == NULL)))
-                    insertmix = True;
+                    insertmix = true;
                 break;
             case 8:    /* Bicolour */
                 colour1 = CVAL(input);
@@ -1095,7 +1094,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
         while (count > 0) {
             if (x >= width) {
                 if (height <= 0)
-                    return False;
+                    return false;
 
                 x = 0;
                 height--;
@@ -1112,7 +1111,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                         else
                             line[x] = prevline[x] ^ mix;
 
-                        insertmix = False;
+                        insertmix = false;
                         count--;
                         x++;
                     }
@@ -1158,10 +1157,10 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                 case 8:    /* Bicolour */
                 REPEAT(if (bicolour) {
                     line[x] = colour2;
-                    bicolour = False;
+                    bicolour = false;
                 } else {
                     line[x] = colour1;
-                    bicolour = True;
+                    bicolour = true;
                     count++;
                 }
                 );
@@ -1177,12 +1176,12 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
 
                 default:
                     throw not_implemented_error{};
-                    return False;
+                    return false;
             }
         }
     }
 
-    return True;
+    return true;
 }
 
 /* Send a self-contained ISO PDU */
@@ -1290,20 +1289,20 @@ BOOL Client::iso_connect(char *server) {
     uint8 code;
 
     if (!tcptool->tcp_connect(server))
-        return False;
+        return false;
 
     iso_send_msg(ISO_PDU_CR);
 
     if (iso_recv_msg(&code) == NULL)
-        return False;
+        return false;
 
     if (code != ISO_PDU_CC) {
         info("expected CC, got 0x%x\n", code);
         tcptool->tcp_disconnect();
-        return False;
+        return false;
     }
 
-    return True;
+    return true;
 }
 
 /* Disconnect from the ISO layer */
@@ -1331,8 +1330,7 @@ void Client::xkeymap_init(void) {
 /* Handles, for example, multi-scancode keypresses (which is not
    possible via keymap-files) */
 BOOL Client::handle_special_keys(int key, uint32 ev_time, BOOL pressed) {
-    //throw not_implemented_error();
-    return False;
+    throw not_implemented_error();
 }
 
 
@@ -1407,7 +1405,7 @@ void Client::update_modifier_state(uint8 scancode, BOOL pressed) {
                 BOOL newNumLockState;
                 newNumLockState =
                         (MASK_HAS_BITS
-                         (remote_modifier_state, MapNumLockMask) == False);
+                         (remote_modifier_state, MapNumLockMask) == false);
                 MASK_CHANGE_BIT(remote_modifier_state,
                                 MapNumLockMask, newNumLockState);
             }
@@ -1430,7 +1428,7 @@ void Client::rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode) {
 
     if (scancode & SCANCODE_EXTENDED) {
         info("Sending extended scancode=0x%x, flags=0x%x\n",
-                scancode & ~SCANCODE_EXTENDED, flags);
+             scancode & ~SCANCODE_EXTENDED, flags);
         rdp_send_input(time, RDP_INPUT_SCANCODE, flags | KBD_FLAG_EXT,
                        scancode & ~SCANCODE_EXTENDED, 0);
     } else {
@@ -1570,7 +1568,7 @@ BOOL Client::licence_parse_authreq(STREAM s, uint8 **token, uint8 **signature) {
     in_uint16_le(s, tokenlen);
     if (tokenlen != LICENCE_TOKEN_SIZE) {
         info("token len %d\n", tokenlen);
-        return False;
+        return false;
     }
 
     in_uint8p(s, *token, tokenlen);
@@ -1581,13 +1579,11 @@ BOOL Client::licence_parse_authreq(STREAM s, uint8 **token, uint8 **signature) {
 
 /* Process an authentication request packet */
 void Client::licence_process_authreq(STREAM s) {
-    assert(s == NULL);
     throw not_implemented_error();
 }
 
 /* Process an licence issue packet */
 void Client::licence_process_issue(STREAM s) {
-    assert(s == NULL);
     throw not_implemented_error();
 }
 
@@ -1670,24 +1666,24 @@ BOOL Client::rdp_parse_bounds(STREAM s, BOUNDS *bounds) {
     in_uint8(s, present);
 
     if (present & 1)
-        rdp_in_coord(s, &bounds->left, False);
+        rdp_in_coord(s, &bounds->left, false);
     else if (present & 16)
-        rdp_in_coord(s, &bounds->left, True);
+        rdp_in_coord(s, &bounds->left, true);
 
     if (present & 2)
-        rdp_in_coord(s, &bounds->top, False);
+        rdp_in_coord(s, &bounds->top, false);
     else if (present & 32)
-        rdp_in_coord(s, &bounds->top, True);
+        rdp_in_coord(s, &bounds->top, true);
 
     if (present & 4)
-        rdp_in_coord(s, &bounds->right, False);
+        rdp_in_coord(s, &bounds->right, false);
     else if (present & 64)
-        rdp_in_coord(s, &bounds->right, True);
+        rdp_in_coord(s, &bounds->right, true);
 
     if (present & 8)
-        rdp_in_coord(s, &bounds->bottom, False);
+        rdp_in_coord(s, &bounds->bottom, false);
     else if (present & 128)
-        rdp_in_coord(s, &bounds->bottom, True);
+        rdp_in_coord(s, &bounds->bottom, true);
 
     return s_check(s);
 }
@@ -1743,7 +1739,7 @@ void Client::process_destblt(STREAM s, DESTBLT_ORDER *os, uint32 present, BOOL d
         in_uint8(s, os->opcode);
 
     info("DESTBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d)\n",
-            os->opcode, os->x, os->y, os->cx, os->cy);
+         os->opcode, os->x, os->y, os->cx, os->cy);
 
     xwin_ui->ui_destblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy);
 }
@@ -1774,7 +1770,7 @@ void Client::process_patblt(STREAM s, PATBLT_ORDER *os, uint32 present, BOOL del
     rdp_parse_brush(s, &os->brush, present >> 7);
 
     info("PATBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,bs=%d,bg=0x%x,fg=0x%x)\n", os->opcode, os->x,
-            os->y, os->cx, os->cy, os->brush.style, os->bgcolour, os->fgcolour);
+         os->y, os->cx, os->cy, os->brush.style, os->bgcolour, os->fgcolour);
 
     xwin_ui->ui_patblt(ROP2_P(os->opcode), os->x, os->y, os->cx, os->cy,
                        &os->brush, os->bgcolour, os->fgcolour);
@@ -1804,7 +1800,7 @@ void Client::process_screenblt(STREAM s, SCREENBLT_ORDER *os, uint32 present, BO
         rdp_in_coord(s, &os->srcy, delta);
 
     info("SCREENBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,srcx=%d,srcy=%d)\n",
-            os->opcode, os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
+         os->opcode, os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
 
     xwin_ui->ui_screenblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
 }
@@ -1834,7 +1830,7 @@ void Client::process_line(STREAM s, LINE_ORDER *os, uint32 present, BOOL delta) 
     rdp_parse_pen(s, &os->pen, present >> 7);
 
     info("LINE(op=0x%x,sx=%d,sy=%d,dx=%d,dx=%d,fg=0x%x)\n",
-            os->opcode, os->startx, os->starty, os->endx, os->endy, os->pen.colour);
+         os->opcode, os->startx, os->starty, os->endx, os->endy, os->pen.colour);
 
     if (os->opcode < 0x01 || os->opcode > 0x10) {
         info("bad ROP2 0x%x\n", os->opcode);
@@ -1886,7 +1882,7 @@ void Client::process_desksave(STREAM s, DESKSAVE_ORDER *os, uint32 present, BOOL
         in_uint8(s, os->action);
 
     info("DESKSAVE(l=%d,t=%d,r=%d,b=%d,off=%d,op=%d)\n",
-            os->left, os->top, os->right, os->bottom, os->offset, os->action);
+         os->left, os->top, os->right, os->bottom, os->offset, os->action);
 
     width = os->right - os->left + 1;
     height = os->bottom - os->top + 1;
@@ -1930,7 +1926,7 @@ void Client::process_memblt(STREAM s, MEMBLT_ORDER *os, uint32 present, BOOL del
     if (present & 0x0100) in_uint16_le(s, os->cache_idx);
 
     info("MEMBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,id=%d,idx=%d)\n",
-            os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx);
+         os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx);
 
     bitmap = xwin_ui->cache_get_bitmap(os->cache_id, os->cache_idx);
     if (bitmap == NULL)
@@ -1982,8 +1978,8 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
     if (present & 0x010000) in_uint16_le(s, os->unknown);
 
     info("TRIBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,id=%d,idx=%d,bs=%d,bg=0x%x,fg=0x%x)\n",
-            os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx,
-            os->brush.style, os->bgcolour, os->fgcolour);
+         os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx,
+         os->brush.style, os->bgcolour, os->fgcolour);
 
     bitmap = xwin_ui->cache_get_bitmap(os->cache_id, os->cache_idx);
     if (bitmap == NULL)
@@ -2317,6 +2313,7 @@ void Client::process_orders(STREAM s) {
 
             rdp_in_present(s, &present, order_flags, size);
 
+            info("order_flags == %d\n", order_flags);
             if (order_flags & RDP_ORDER_BOUNDS) {
                 if (!(order_flags & RDP_ORDER_LASTBOUNDS))
                     rdp_parse_bounds(s, &os->bounds);
@@ -2730,13 +2727,13 @@ BOOL Client::sec_parse_public_key(STREAM s, uint8 **modulus, uint8 **exponent) {
     in_uint32_le(s, magic);
     if (magic != SEC_RSA_MAGIC) {
         info("RSA magic 0x%x\n", magic);
-        return False;
+        return false;
     }
 
     in_uint32_le(s, modulus_len);
     if (modulus_len != SEC_MODULUS_SIZE + SEC_PADDING_SIZE) {
         //info("modulus len 0x%x\n", modulus_len);
-        //return False;
+        //return false;
     }
 
     in_uint8s(s, 8);    /* modulus_bits, unknown */
@@ -2757,13 +2754,13 @@ BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
     in_uint32_le(s, *rc4_key_size);    /* 1 = 40-bit, 2 = 128-bit */
     in_uint32_le(s, crypt_level);    /* 1 = low, 2 = medium, 3 = high */
     if (crypt_level == 0)    /* no encryptation */
-        return False;
+        return false;
     in_uint32_le(s, random_len);
     in_uint32_le(s, rsa_info_len);
 
     if (random_len != SEC_RANDOM_SIZE) {
         info("random len %d\n", random_len);
-        return False;
+        return false;
     }
 
     in_uint8p(s, *server_random, random_len);
@@ -2771,7 +2768,7 @@ BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
     /* RSA info */
     end = s->p + rsa_info_len;
     if (end > s->end)
-        return False;
+        return false;
 
     in_uint8s(s, 12);    /* unknown */
 
@@ -2784,7 +2781,7 @@ BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
         switch (tag) {
             case SEC_TAG_PUBKEY:
                 if (!sec_parse_public_key(s, modulus, exponent))
-                    return False;
+                    return false;
 
                 break;
 
@@ -2807,7 +2804,7 @@ BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
 /* Generate a 32-byte random for the secure transport code. */
 void Client::generate_random(uint8 *random) {
     for (int i = 0; i < SEC_RANDOM_SIZE; ++i) {
-        random[i] = (uint8)rand();
+        random[i] = (uint8) rand();
     }
 }
 
@@ -2899,13 +2896,13 @@ BOOL Client::sec_connect(char *server) {
     sec_out_mcs_data(&mcs_data);
 
     if (!mcs_connect(server, &mcs_data))
-        return False;
+        return false;
 
     sec_process_mcs_data(&mcs_data);
     if (encryption)
         sec_establish_key();
     delete mcs_data.data;
-    return True;
+    return true;
 }
 
 /* Disconnect a connection */

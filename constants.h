@@ -30,11 +30,6 @@
 
 typedef int BOOL;
 
-#ifndef True
-#define True  (1)
-#define False (0)
-#endif
-
 #include <QImage>
 
 typedef unsigned char uint8;

@@ -6,7 +6,8 @@
 #include <QTcpSocket>
 #include <QHostInfo>
 
-class TcpTool {
+class TcpTool: public QObject {
+Q_OBJECT
 private:
     QTcpSocket *sock;
     struct stream in;
@@ -28,6 +29,9 @@ public:
 
     void tcp_send(STREAM s);
 
+    bool get_ready();
+
+    void trynext();
 };
 
 #endif

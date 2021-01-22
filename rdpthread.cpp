@@ -9,22 +9,22 @@
 #include "mainwindow.h"
 #include <QQueue>
 #include <QMouseEvent>
-#include <QTimer>
 
 void info(const char *format, ...);
 
-RDPThread::RDPThread(MainWindow * w): QThread(w){
+RDPThread::RDPThread(MainWindow * w){
     client = NULL;
-    event_process_timer = NULL;
     window = w;
+    willclose = false;
 }
 
-[[noreturn]] void RDPThread::run() {
-    TcpTool * tcptool = new TcpTool();
+void RDPThread::run() {
+    tcptool = new TcpTool();
     XWin_Ui * xwin_ui = new XWin_Ui(800, 600, 32);
-    client = new Client(xwin_ui, tcptool);
-    char server[256] = "192.168.192.128";
-    uint32 flags = RDP_LOGON_NORMAL;
+    char server[256] = "192.168.93.129";
+    char username[256] = "Administrator";
+    client = new Client(xwin_ui, tcptool, server, username);
+    uint32 flags = RDP_LOGON_NORMAL | RDP_LOGON_AUTO;
     char domain[256] = {0};
     char password[256] = "123456";
     char shell[256] = {0};
@@ -33,25 +33,29 @@ RDPThread::RDPThread(MainWindow * w): QThread(w){
         exit(-1);
     memset(password, 0, sizeof(password));
 
-//    event_process_timer = new QTimer();
-//    event_process_timer->setInterval(10);
-//    connect(event_process_timer, SIGNAL(timeout()), this, SLOT(dispatch_message()));
-//    event_process_timer->start();
-
     info("Initialize finished.");
-
     while (true){
+        if (willclose){
+            delete client;
+            client = NULL;
+            return;
+        }
         dispatch_message();
-        client->rdp_main_loop();
-        window->getPanel()->setPixmap(*client->getUi()->getPixmap());
     }
 }
 
 void RDPThread::dispatch_message(){
-    info("in event process...");
+    if (tcptool->get_ready()){
+        client->rdp_main_loop();
+        window->getPanel()->setPixmap(*client->getUi()->getPixmap());
+    }
+    else {
+        tcptool->trynext();
+    }
+    static int i = 0;
     while (!events.empty()){
         QEvent * event = events.dequeue();
-        info("event detected...");
+        info("event detected... %d", ++i);
 
         if (event->type() == QEvent::MouseButtonPress){
             QMouseEvent * realEvent = (QMouseEvent *)event;
@@ -74,9 +78,7 @@ Client *RDPThread::getClient() {
     return client;
 }
 
-RDPThread::~RDPThread() {
-    event_process_timer->stop();
-    delete event_process_timer;
-    delete client;
+void RDPThread::setClose() {
+    willclose = true;
 }
 

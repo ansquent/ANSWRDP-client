@@ -24,23 +24,17 @@ class Client {
 private:
     XWin_Ui *xwin_ui;
     TcpTool *tcptool;
-    char title[32];
-    char username[16];
-    char hostname[16];
-    char keymapname[16];
     int keylayout;        /* Defaults to US keyboard layout */
     int width;        /* If width or height are reset to zero, the geometry will
                         be fetched from _NET_WORKAREA */
     int height;
     int tcp_port_rdp;
     BOOL bitmap_compression;
-    BOOL sendmotion;
     BOOL orders;
     BOOL encryption;
     BOOL desktop_save;
-    BOOL fullscreen;
-    BOOL grab_keyboard;
-    BOOL hide_decorations;
+
+    char * hostname, * username;
 
     /* rdp.cpp */
     STREAM rdp_recv(uint8 *type);
@@ -141,9 +135,6 @@ private:
     /* bitmap.c */
     BOOL bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input,
                            int size);
-
-    /* ewmhints.c */
-    int get_current_workarea(uint32 *x, uint32 *y, uint32 *width, uint32 *height);
 
     /* iso.c */
     void iso_send_msg(uint8 code);
@@ -321,7 +312,7 @@ private:
     BOOL handle_special_keys(int key, uint32 ev_time, BOOL pressed);
 
 public:
-    Client(XWin_Ui *ui, TcpTool *tool);
+    Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username);
 
     virtual ~Client();
 
@@ -331,14 +322,15 @@ public:
 
     void rdp_out_unistr(stream *s, char *string, int len);
 
-    BOOL rdp_connect(char *server, uint32 flags, char *domain,
-                     char *password, char *command, char *directory);
+    BOOL rdp_connect(char *server, uint32 flags, char *domain, char *password, char *command,
+                     char *directory);
 
     void rdp_send_input(uint32 time, uint16 message_type,
                         uint16 device_flags, uint16 param1, uint16 param2);
     uint16 xkeymap_translate_button(Qt::MouseButton button);
 
     void rdp_disconnect();
+
 };
 
 #endif

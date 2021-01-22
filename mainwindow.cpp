@@ -77,7 +77,7 @@ QLabel *MainWindow::getPanel() {
 }
 
 MainWindow::~MainWindow() {
-    delete rdpThread;
+    rdpThread->setClose();
 }
 
 

@@ -74,14 +74,11 @@ STREAM TcpTool::tcp_recv(unsigned length) {
     in.end = in.p = in.data;
     while (length > 0) {
         if (sock->bytesAvailable() <= 0) {
-            if (!sock->waitForReadyRead(-1)) {
-                info("Error: waitForReadyRead Failed.");
-                return nullptr;
-            }
+            sock->waitForReadyRead(-1);
         }
         rcvd = sock->read((char *) in.end, length);
         if (rcvd <= 0) {
-            info("recv: %s", strerror(errno));
+            info("recv: %d: %s", errno, strerror(errno));
         }
         in.end += rcvd;
         length -= rcvd;
@@ -103,7 +100,7 @@ BOOL TcpTool::tcp_connect(char *server) {
 
     out.size = 4096;
     out.data = new uchar[out.size];
-    return True;
+    return true;
 }
 
 /* Disconnect on the TCP layer */
@@ -115,3 +112,16 @@ TcpTool::~TcpTool() {
     tcp_disconnect();
     delete sock;
 }
+
+
+bool TcpTool::get_ready() {
+    bool ready = (sock->bytesAvailable() > 0);
+    return ready;
+}
+
+void TcpTool::trynext() {
+    sock->waitForReadyRead(0);
+}
+
+
+

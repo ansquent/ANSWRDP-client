@@ -82,7 +82,6 @@ XWin_Ui::mwm_hide_decorations(void) {
 
 BOOL
 XWin_Ui::get_key_state(unsigned int state, uint32 keysym) {
-    assert(state == keysym);
     throw not_implemented_error();
 }
 
@@ -95,13 +94,11 @@ XWin_Ui::xwin_toggle_fullscreen(void) {
 /* Returns 0 after user quit, 1 otherwise */
 int
 XWin_Ui::ui_select(int rdp_socket) {
-    assert(rdp_socket == 0);
     throw not_implemented_error();
 }
 
 void
 XWin_Ui::ui_move_pointer(int x, int y) {
-    assert(x == y);
     throw not_implemented_error();
 }
 
@@ -161,13 +158,11 @@ XWin_Ui::ui_create_cursor(unsigned int x, unsigned int y, int width, int height,
 
 void
 XWin_Ui::ui_set_cursor(HRDPCURSOR cursor) {
-    assert(cursor != NULL);
     //throw not_implemented_error();
 }
 
 void
 XWin_Ui::ui_destroy_cursor(HRDPCURSOR cursor) {
-    assert(cursor != NULL);
     //throw not_implemented_error();
 }
 
@@ -216,7 +211,6 @@ void
 XWin_Ui::ui_patblt(uint8 opcode,
         /* dest */ int x, int y, int cx, int cy,
         /* brush */ BRUSH *brush, int bgcolour, int fgcolour) {
-    return;
     QPixmap *fill = new QBitmap();
     uint8 ipattern[8];
     QPainter *painter = new QPainter(pixmap);
@@ -246,7 +240,6 @@ void
 XWin_Ui::ui_screenblt(uint8 opcode,
         /* dest */ int x, int y, int cx, int cy,
         /* src */ int srcx, int srcy) {
-    assert(opcode = x = y = cx = cy = srcx = srcy);
     throw not_implemented_error();
 }
 
@@ -268,9 +261,6 @@ XWin_Ui::ui_triblt(uint8 opcode,
         /* brush */ BRUSH *brush, int bgcolour, int fgcolour) {
     /* This is potentially difficult to do in general. Until someone
        comes up with a more efficient way of doing it I am using cases. */
-    if (opcode != 12) {
-        throw not_implemented_error{};
-    }
     switch (opcode) {
         case 0x69:    /* PDSxxn */
             ui_memblt(ROP2_XOR, x, y, cx, cy, src, srcx, srcy);
@@ -289,7 +279,7 @@ XWin_Ui::ui_triblt(uint8 opcode,
             break;
 
         default:
-            throw not_implemented_error{};
+            info("Not implemented opcode %d in triblt", opcode);
             ui_memblt(ROP2_COPY, x, y, cx, cy, src, srcx, srcy);
     }
 }
