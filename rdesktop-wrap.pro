@@ -16,33 +16,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    bitmap.cpp \
-    cache.cpp \
-    iso.cpp \
-    licence.cpp \
     main.cpp \
     mainwindow.cpp \
-    mcs.cpp \
-    orders.cpp \
-    rdesktop.cpp \
-    rdp.cpp \
-    secure.cpp \
     tcp.cpp \
-    xkeymap.cpp \
-    xwin.cpp
+    xwin.cpp \
+    debug.cpp \
+    client.cpp \
+    rdpthread.cpp
 
 HEADERS += \
     constants.h \
     mainwindow.h \
-    orders.h \
-    parse.h \
-    proto.h \
-    rdesktop.h \
-    scancodes.h \
-    types.h \
+    client.h \
+    rdpthread.h \
+    tcp.h \
     xwin.h
-
-FORMS +=
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

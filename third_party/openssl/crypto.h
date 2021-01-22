@@ -32,7 +32,7 @@
 # include "opensslconf.h"
 
 # ifdef CHARSET_EBCDIC
-#  include "ebcdic.h"
+#  include "ebcdic.h>
 # endif
 
 /*

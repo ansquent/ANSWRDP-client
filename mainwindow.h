@@ -2,13 +2,17 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QThread>
 #include <QLabel>
 #include <QPixmap>
 #include <QTimer>
 #include <QEvent>
-#include "xwin.h"
-#include "client.h"
-#include "tcp.h"
+
+class XWin_Ui;
+
+class RDPThread;
+
+class Client;
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
@@ -20,14 +24,9 @@ public:
 
     ~MainWindow();
 
-public slots:
-    void update();
-
 private:
     QLabel *panel;
-    XWin_Ui *xwin_ui;
-    Client *client;
-    TcpTool *tcptool;
+    RDPThread *rdpThread;
 
 protected:
     void keyPressEvent(QKeyEvent *event);

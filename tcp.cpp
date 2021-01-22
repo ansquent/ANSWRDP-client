@@ -110,3 +110,8 @@ BOOL TcpTool::tcp_connect(char *server) {
 void TcpTool::tcp_disconnect(void) {
     sock->disconnectFromHost();
 }
+
+TcpTool::~TcpTool() {
+    tcp_disconnect();
+    delete sock;
+}

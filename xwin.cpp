@@ -18,7 +18,6 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <mainwindow.h>
 #include <QImage>
 #include <QPainter>
 #include <QPen>
@@ -28,6 +27,7 @@
 #include <QRgb>
 #include <algorithm>
 #include <QBitmap>
+#include <cassert>
 #include "xwin.h"
 
 void info(const char *format, ...);
@@ -59,18 +59,14 @@ void print_to_file(const char *filename, uchar *data, int width, int height) {
     fclose(fp);
 }
 
-XWin_Ui::XWin_Ui(MainWindow *mainwindow, int width, int height, int bpp) {
+XWin_Ui::XWin_Ui(int width, int height, int bpp) {
     this->width = width;
     this->height = height;
     this->bpp = bpp;
     init_bit_to_format();
     init_rop2_map();
-    window = mainwindow;
-    window->setFixedSize(width, height);
-    window->getPanel()->setGeometry(0, 0, width, height);
+    memset_0();
     pixmap = new QPixmap(width, height);
-    window->getPanel()->setPixmap(*pixmap);
-    window->show();
 }
 
 XWin_Ui::~XWin_Ui() {
@@ -124,8 +120,6 @@ XWin_Ui::ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, ui
     QPainter *painter = new QPainter(pixmap);
     QRect srcRect(0, 0, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, *image, srcRect);
-    window->getPanel()->setPixmap(*pixmap);
-    window->getPanel()->repaint();
     delete painter;
 }
 
@@ -215,8 +209,6 @@ XWin_Ui::ui_destblt(uint8 opcode,
     QBrush brush;
     brush.setStyle(Qt::BrushStyle::SolidPattern);
     painter->fillRect(x, y, cx, cy, brush);
-    window->getPanel()->setPixmap(*pixmap);
-    window->getPanel()->repaint();
     delete painter;
 }
 
@@ -247,8 +239,6 @@ XWin_Ui::ui_patblt(uint8 opcode,
             painter->fillRect(x, y, cx, cy, realBrush);
             break;
     }
-    window->getPanel()->setPixmap(*pixmap);
-    window->getPanel()->repaint();
     delete painter;
 }
 
@@ -268,8 +258,6 @@ XWin_Ui::ui_memblt(uint8 opcode,
     painter->setCompositionMode(rop2_map[opcode]);
     QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, *src, srcRect);
-    window->getPanel()->setPixmap(*pixmap);
-    window->getPanel()->repaint();
     delete painter;
 }
 
@@ -316,8 +304,6 @@ XWin_Ui::ui_line(uint8 opcode,
     mypen.setColor(colmap[pen->colour]);
     painter->setPen(mypen);
     painter->drawLine(startx, starty, endx, endy);
-    window->getPanel()->setPixmap(*pixmap);
-    window->getPanel()->repaint();
     delete painter;
 }
 
@@ -331,8 +317,6 @@ XWin_Ui::ui_rect(
     realBrush.setStyle(Qt::BrushStyle::SolidPattern);
     painter->setBrush(realBrush);
     painter->fillRect(x, y, cx, cy, realBrush);
-    window->getPanel()->setPixmap(*pixmap);
-    window->getPanel()->repaint();
     delete painter;
 }
 
@@ -451,7 +435,6 @@ XWin_Ui::ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y,
                 break;
         }
     }
-    window->getPanel()->repaint();
 }
 
 void

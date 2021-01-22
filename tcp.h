@@ -16,6 +16,8 @@ private:
 public:
     TcpTool();
 
+    virtual ~TcpTool();
+
     STREAM tcp_init(int maxlen);
 
     BOOL tcp_connect(char *server);

@@ -3,7 +3,6 @@
 
 #include <ctime>
 #include <cerrno>
-#include <mainwindow.h>
 #include <QImage>
 #include <QPainter>
 #include <QPen>
@@ -16,13 +15,11 @@
 #include <QBitmap>
 #include "constants.h"
 
-class MainWindow;
 
 class XWin_Ui {
 private:
     std::map<int, QImage::Format> bit_to_format;
     int width, height, bpp;
-    MainWindow *window;
     QPixmap *pixmap;
     QPainter::CompositionMode *rop2_map;
     uint32 *colmap;
@@ -33,6 +30,14 @@ private:
     DATABLOB textcache[256];
     FONTGLYPH fontcache[12][256];
     HRDPBITMAP bmpcache[3][600];
+
+    void memset_0(){
+        memset(cursorcache, 0, sizeof(cursorcache));
+        memset(deskcache, 0, sizeof(deskcache));
+        memset(textcache, 0, sizeof(textcache));
+        memset(fontcache, 0, sizeof(fontcache));
+        memset(bmpcache, 0, sizeof(bmpcache));
+    }
 
     void init_bit_to_format() {
         bit_to_format[32] = QImage::Format_RGB32;
@@ -76,7 +81,7 @@ private:
                   int &x, int &y, int &mixmode, int &bgcolour, int &fgcolour);
 
 public:
-    XWin_Ui(MainWindow *, int, int, int);
+    XWin_Ui(int, int, int);
 
     ~XWin_Ui();
 

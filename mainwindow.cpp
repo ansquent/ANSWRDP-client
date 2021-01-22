@@ -3,29 +3,21 @@
 #include <QThread>
 #include <QPaintEvent>
 #include <QTimer>
-#include "constants.h"
+#include <QThread>
+#include "rdpthread.h"
 #include "xwin.h"
+#include "client.h"
+
 void info(const char *format, ...);
+
 MainWindow::MainWindow(QWidget *parent)
         : QMainWindow(parent) {
+    setGeometry(QRect(0, 0, 800, 600));
     panel = new QLabel(this);
-    tcptool = new TcpTool();
-    xwin_ui = new XWin_Ui(this, 800, 600, 32);
-    client = new Client(xwin_ui, tcptool);
-    char server[256] = "192.168.93.129";
-    uint32 flags = RDP_LOGON_NORMAL;
-    char domain[256] = {0};
-    char password[256] = "123456";
-    char shell[256] = {0};
-    char directory[256] = {0};
-    if (!client->rdp_connect(server, flags, domain, password, shell, directory))
-        exit(-1);
-    memset(password, 0, sizeof(password));
+    show();
 
-    QTimer * timer = new QTimer();
-    timer->setInterval(10);
-    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start();
+    rdpThread = new RDPThread();
+    rdpThread->start();
 }
 
 
@@ -57,7 +49,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
     static int filecount = 0;
     QString filename = QString::number(++filecount) + ".jpg";
     info("clicked. Filename = %s", filename.toStdString().c_str());
-    xwin_ui->getPixmap()->save(filename);
+    rdpThread->getClient()->getUi()->getPixmap()->save(filename);
 //    uint16 flags = MOUSE_FLAG_DOWN;
 //    uint16 button = client->xkeymap_translate_button(event->button());
 //    if (button == 0)
@@ -92,11 +84,7 @@ QLabel *MainWindow::getPanel() {
 }
 
 MainWindow::~MainWindow() {
-    client->rdp_disconnect();
-    delete xwin_ui;
+    delete rdpThread;
 }
 
-void MainWindow::update() {
-    client->rdp_main_loop();
-}
 

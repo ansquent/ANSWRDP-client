@@ -1,9 +1,10 @@
 #include "mainwindow.h"
 #include <QPaintEvent>
-#include <QRandomGenerator>
+#include <cassert>
 #include "constants.h"
 #include "xwin.h"
 #include "client.h"
+#include "tcp.h"
 #include "third_party/openssl/rc4.h"
 #include "third_party/openssl/md5.h"
 #include "third_party/openssl/sha.h"
@@ -2806,7 +2807,7 @@ BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
 /* Generate a 32-byte random for the secure transport code. */
 void Client::generate_random(uint8 *random) {
     for (int i = 0; i < SEC_RANDOM_SIZE; ++i) {
-        random[i] = (uint8) (QRandomGenerator::global()->generate() % (1 << 8));
+        random[i] = (uint8)rand();
     }
 }
 
@@ -2910,6 +2911,16 @@ BOOL Client::sec_connect(char *server) {
 /* Disconnect a connection */
 void Client::sec_disconnect(void) {
     mcs_disconnect();
+}
+
+XWin_Ui *Client::getUi() {
+    return xwin_ui;
+}
+
+Client::~Client() {
+    rdp_disconnect();
+    delete xwin_ui;
+    delete tcptool;
 }
 
 

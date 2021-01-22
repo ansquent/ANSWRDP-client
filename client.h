@@ -3,7 +3,6 @@
 
 #include <ctime>
 #include <cerrno>
-#include <mainwindow.h>
 #include <QImage>
 #include <QPainter>
 #include <QPen>
@@ -15,9 +14,11 @@
 #include <algorithm>
 #include <QBitmap>
 #include <third_party/openssl/rc4.h>
-#include "xwin.h"
-#include "tcp.h"
 #include "constants.h"
+
+class XWin_Ui;
+
+class TcpTool;
 
 class Client {
 private:
@@ -315,8 +316,18 @@ private:
 
     void update_modifier_state(uint8 scancode, BOOL pressed);
 
+    void rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode);
+
+    BOOL handle_special_keys(int key, uint32 ev_time, BOOL pressed);
+
+    uint16 xkeymap_translate_button(Qt::MouseButton button);
+
 public:
     Client(XWin_Ui *ui, TcpTool *tool);
+
+    virtual ~Client();
+
+    XWin_Ui * getUi();
 
     void rdp_main_loop();
 
@@ -324,12 +335,6 @@ public:
 
     BOOL rdp_connect(char *server, uint32 flags, char *domain,
                      char *password, char *command, char *directory);
-
-    void rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode);
-
-    BOOL handle_special_keys(int key, uint32 ev_time, BOOL pressed);
-
-    uint16 xkeymap_translate_button(Qt::MouseButton button);
 
     void rdp_send_input(uint32 time, uint16 message_type,
                         uint16 device_flags, uint16 param1, uint16 param2);
