@@ -20,8 +20,6 @@ Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = nullptr);
 
-    QLabel *getPanel();
-
     ~MainWindow();
 
 private:
@@ -40,6 +38,9 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
 
     void wheelEvent(QWheelEvent *event);
+
+private slots:
+    void paint();
 };
 
 #endif // MAINWINDOW_H

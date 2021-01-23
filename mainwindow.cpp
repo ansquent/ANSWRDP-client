@@ -12,13 +12,13 @@ void info(const char *format, ...);
 
 MainWindow::MainWindow(QWidget *parent)
         : QMainWindow(parent) {
-    setGeometry(QRect(0, 0, 800, 600));
+    setGeometry(QRect(0, 0, 1200, 800));
     panel = new QLabel(this);
-    panel->setGeometry(0, 0, 800, 600);
-    show();
-
-    rdpThread = new RDPThread(this);
+    panel->setGeometry(0, 0, 1200, 800);
+    rdpThread = new RDPThread(1200, 800, 32);
     rdpThread->start();
+    connect(rdpThread, SIGNAL(paint()), this, SLOT(paint()));
+    setAttribute( Qt::WA_Hover, true);
 }
 
 
@@ -42,22 +42,15 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event) {
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event) {
-//    client->rdp_send_input(time(NULL), RDP_INPUT_MOUSE,
-//                           MOUSE_FLAG_MOVE, event->x(), event->y());
+    rdpThread->push_event(new QMouseEvent(*event));
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event) {
-    info("push_back event.");
-    rdpThread->push_event(event);
+    rdpThread->push_event(new QMouseEvent(*event));
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
-//    uint16 flags = 0;
-//    uint16 button = client->xkeymap_translate_button(event->button());
-//    if (button == 0)
-//        return;
-//    client->rdp_send_input(time(NULL), RDP_INPUT_MOUSE,
-//                           flags | button, event->x(), event->y());
+    rdpThread->push_event(new QMouseEvent(*event));
 }
 
 void MainWindow::wheelEvent(QWheelEvent *event) {
@@ -72,12 +65,13 @@ void MainWindow::wheelEvent(QWheelEvent *event) {
 //                           flags | button, event->x(), event->y());
 }
 
-QLabel *MainWindow::getPanel() {
-    return panel;
-}
-
 MainWindow::~MainWindow() {
     rdpThread->setClose();
+}
+
+void MainWindow::paint() {
+    panel->setPixmap(*rdpThread->getClient()->getUi()->getPixmap());
+    repaint();
 }
 
 

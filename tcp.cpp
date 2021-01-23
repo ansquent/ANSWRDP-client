@@ -29,12 +29,14 @@ void info(const char *format, ...);
 TcpTool::TcpTool() {
     sock = new QTcpSocket();
     tcp_port_rdp = TCP_PORT_RDP;
+    memset(&in, 0, sizeof(in));
+    memset(&out, 0, sizeof(out));
 }
 
 /* Initialise TCP transport data packet */
 STREAM TcpTool::tcp_init(int maxlen) {
     if (maxlen > out.size) {
-        delete out.data;
+        delete []out.data;
         out.data = new unsigned char[maxlen];
         out.size = maxlen;
     }
@@ -67,14 +69,15 @@ void TcpTool::tcp_send(STREAM s) {
 STREAM TcpTool::tcp_recv(unsigned length) {
     int rcvd = 0;
     if (length > in.size) {
-        delete in.data;
+        delete []in.data;
         in.data = new unsigned char[length];
         in.size = length;
     }
     in.end = in.p = in.data;
     while (length > 0) {
         if (sock->bytesAvailable() <= 0) {
-            sock->waitForReadyRead(-1);
+            if (!sock->waitForReadyRead(3000))
+                return NULL;
         }
         rcvd = sock->read((char *) in.end, length);
         if (rcvd <= 0) {
@@ -90,9 +93,9 @@ STREAM TcpTool::tcp_recv(unsigned length) {
 BOOL TcpTool::tcp_connect(char *server) {
     QHostInfo host = QHostInfo::fromName(QString(server));
     sock->connectToHost(server, tcp_port_rdp);
-    if (!sock->waitForConnected(30000)) {
+    if (!sock->waitForConnected(3000)) {
         info("Error: WaitForConnected Failed. %s", sock->errorString().toStdString().c_str());
-        exit(-1);
+        return false;
     }
 
     in.size = 4096;
@@ -109,8 +112,9 @@ void TcpTool::tcp_disconnect(void) {
 }
 
 TcpTool::~TcpTool() {
-    tcp_disconnect();
     delete sock;
+    delete []in.data;
+    delete []out.data;
 }
 
 

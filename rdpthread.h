@@ -18,12 +18,13 @@ class RDPThread : public QThread {
 Q_OBJECT
 private:
     Client * client;
-    MainWindow * window;
     QQueue<QEvent *> events;
     TcpTool * tcptool;
+    XWin_Ui * xwin_ui;
     bool willclose;
+    int width, height, bpp;
 public:
-    explicit RDPThread(MainWindow *);
+    explicit RDPThread(int width, int height, int bpp);
 
     void run() override;
 
@@ -32,8 +33,12 @@ public:
     Client * getClient();
 
     void setClose();
+
+    ~RDPThread() override;
 private slots:
     void dispatch_message();
+signals:
+    void paint();
 };
 
 

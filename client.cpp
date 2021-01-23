@@ -37,7 +37,7 @@ Client::Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username) : c
         0xFE, 0x00, 0x80, 0x00, 0xFE,
         0x00, 0x00, 0x01, 0x40, 0x00, 0x00, 0x08, 0x00, 0x01, 0x00, 0x01,
         0x02, 0x00, 0x00, 0x00
-}, licence_issued(false), keylayout(0x409), width(800), height(600), tcp_port_rdp(TCP_PORT_RDP),
+}, licence_issued(false), keylayout(0x409), tcp_port_rdp(TCP_PORT_RDP),
                                              bitmap_compression(true), orders(true), encryption(true),
                                              desktop_save(true), remote_modifier_state(0), xwin_ui(ui),
                                              tcptool(tool) {
@@ -51,6 +51,8 @@ Client::Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username) : c
     }
     this->hostname = hostname;
     this->username = username;
+    this->width = xwin_ui->get_width();
+    this->height = xwin_ui->get_height();
 }
 
 void Client::rdp_main_loop() {
@@ -570,7 +572,7 @@ void Client::process_bitmap_updates(STREAM s) {
                 in_uint8a(s, &bmpdata[(height - y - 1) * width], width);
             }
             xwin_ui->ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
-            delete bmpdata;
+            delete []bmpdata;
             continue;
         }
 
@@ -584,7 +586,7 @@ void Client::process_bitmap_updates(STREAM s) {
             xwin_ui->ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
         }
 
-        delete bmpdata;
+        delete []bmpdata;
     }
 }
 
@@ -610,7 +612,7 @@ void Client::process_palette(STREAM s) {
 
     xwin_ui->ui_create_colourmap(&map);
 
-    delete map.colours;
+    delete []map.colours;
 }
 
 /* Process an update PDU */
@@ -1512,25 +1514,6 @@ void Client::licence_process_demand(STREAM s) {
        the security of licence negotiation isn't exactly paramount. */
     memset(null_data, 0, sizeof(null_data));
     licence_generate_keys(null_data, server_random, null_data);
-
-#ifdef SAVE_LICENCE
-    licence_size = load_licence(&licence_data);
-    if (licence_size != -1)
-    {
-        /* Generate a signature for the HWID buffer */
-        licence_generate_hwid(hwid);
-        sec_sign(signature, 16, licence_sign_key, 16, hwid, sizeof(hwid));
-
-        /* Now encrypt the HWID */
-        RC4_set_key(&crypt_key, 16, licence_key);
-        RC4(&crypt_key, sizeof(hwid), hwid, hwid);
-
-        licence_present(null_data, null_data, licence_data, licence_size, hwid, signature);
-        delete licence_data;
-        return;
-    }
-#endif
-
     licence_send_request(null_data, null_data, username, hostname);
 }
 
@@ -2146,7 +2129,7 @@ void Client::process_raw_bmpcache(STREAM s) {
     }
 
     bitmap = xwin_ui->ui_create_bitmap(width, height, inverted);
-    delete inverted;
+    delete []inverted;
     xwin_ui->cache_put_bitmap(cache_id, cache_idx, bitmap);
 }
 
@@ -2176,7 +2159,7 @@ void Client::process_bmpcache(STREAM s) {
         xwin_ui->cache_put_bitmap(cache_id, cache_idx, bitmap);
     }
 
-    delete bmpdata;
+    delete []bmpdata;
 }
 
 /* Process a colourmap cache order */
@@ -2202,7 +2185,7 @@ void Client::process_colcache(STREAM s) {
 
     xwin_ui->ui_create_colourmap(&map);
 
-    delete map.colours;
+    delete []map.colours;
 }
 
 /* Process a font cache order */
@@ -2901,7 +2884,7 @@ BOOL Client::sec_connect(char *server) {
     sec_process_mcs_data(&mcs_data);
     if (encryption)
         sec_establish_key();
-    delete mcs_data.data;
+    delete []mcs_data.data;
     return true;
 }
 
@@ -2916,8 +2899,8 @@ XWin_Ui *Client::getUi() {
 
 Client::~Client() {
     rdp_disconnect();
-    delete xwin_ui;
-    delete tcptool;
+    delete []pad_54;
+    delete []pad_92;
 }
 
 

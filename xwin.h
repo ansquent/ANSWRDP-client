@@ -66,7 +66,7 @@ private:
     uint8 *
     translate_image(int width, int height, uint8 *data) {
         int size = width * height;
-        uint32 *out = (uint32 *) malloc(size * sizeof(uint32));
+        uint32 *out = new uint32[size];
         memset(out, 0, sizeof(uint32) * size);
         uint32 *p = out;
         uint32 *end = out + size;
@@ -170,6 +170,9 @@ public:
     HRDPCURSOR cache_get_cursor(uint16 cache_idx);
 
     void cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor);
+
+    int get_height();
+    int get_width();
 };
 
 #endif
