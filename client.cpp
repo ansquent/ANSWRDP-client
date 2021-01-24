@@ -4,17 +4,22 @@
 #include "xwin.h"
 #include "client.h"
 #include "tcp.h"
-#include "third_party/openssl/rc4.h"
-#include "third_party/openssl/md5.h"
-#include "third_party/openssl/sha.h"
-#include "third_party/openssl/bn.h"
+#include "third_party/openssl/include/rc4.h"
+#include "third_party/openssl/include/md5.h"
+#include "third_party/openssl/include/sha.h"
+#include "third_party/openssl/include/bn.h"
 #include "third_party/x11/keysymdef.h"
 
 void info(const char *format, ...);
 
 #ifdef _WIN32
-#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libcrypto.lib")
-#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libssl.lib")
+#ifndef _WIN64
+#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libcrypto32MT.lib")
+#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libssl32MT.lib")
+#else
+#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libcrypto64MT.lib")
+#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libssl64MT.lib")
+#endif
 #endif
 
 Client::Client(XWin_Ui *ui, TcpTool *tool, char *hostname, char *username) : canned_caps{

@@ -2,5 +2,4 @@
 .vscode/*
 cmake-build-debug/*
 .idea/*
-third_party/*
 build/*
