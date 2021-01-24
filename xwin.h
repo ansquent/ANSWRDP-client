@@ -23,6 +23,7 @@ private:
     QPixmap *pixmap;
     QPainter::CompositionMode *rop2_map;
     uint32 *colmap;
+    int clipx, clipy, clipcx, clipcy;
 
     /* cache.cpp */
     HRDPCURSOR cursorcache[0x20];
@@ -89,23 +90,19 @@ public:
         return pixmap;
     }
 
-    void xwin_toggle_fullscreen(void);
-
-    int ui_select(int rdp_socket);
-
     void ui_move_pointer(int x, int y);
 
     HRDPBITMAP ui_create_bitmap(int width, int height, uint8 *data);
 
     void ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, uint8 *data);
 
-    void ui_destroy_bitmap(HRDPBITMAP bmp);
+    static void ui_destroy_bitmap(HRDPBITMAP bmp);
 
-    HGLYPH ui_create_glyph(int width, int height, uint8 *data);
+    static HGLYPH ui_create_glyph(int width, int height, const uint8 *data);
 
-    void ui_destroy_glyph(HGLYPH glyph);
+    static void ui_destroy_glyph(HGLYPH glyph);
 
-    HRDPCURSOR ui_create_cursor(unsigned int x, unsigned int y, int width, int height, uint8 *andmask,
+    static HRDPCURSOR ui_create_cursor(unsigned int x, unsigned int y, int width, int height, uint8 *andmask,
                                 uint8 *xormask);
 
     void ui_set_cursor(HRDPCURSOR cursor);
@@ -116,14 +113,13 @@ public:
 
     void ui_set_clip(int x, int y, int cx, int cy);
 
-    void ui_reset_clip(void);
+    void ui_reset_clip();
 
-    void ui_bell(void);
+    static void ui_bell();
 
     void ui_destblt(uint8 opcode, int x, int y, int cx, int cy);
 
-    void ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH *brush, int bgcolour,
-                   int fgcolour);
+    void ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH *brush, int fgcolour);
 
     void ui_screenblt(uint8 opcode, int x, int y, int cx, int cy, int srcx, int srcy);
 
@@ -146,10 +142,6 @@ public:
 
     void ui_desktop_restore(uint32 offset, int x, int y, int cx, int cy);
 
-    void mwm_hide_decorations(void);
-
-    BOOL get_key_state(unsigned int state, uint32 keysym);
-
     HRDPBITMAP cache_get_bitmap(uint8 cache_id, uint16 cache_idx);
 
     void cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HRDPBITMAP bitmap);
@@ -171,8 +163,8 @@ public:
 
     void cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor);
 
-    int get_height();
-    int get_width();
+    int get_height() const;
+    int get_width() const;
 };
 
 #endif

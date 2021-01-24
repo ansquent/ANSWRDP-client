@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include <QPaintEvent>
-#include <cassert>
 #include "constants.h"
 #include "xwin.h"
 #include "client.h"
@@ -9,6 +8,7 @@
 #include "third_party/openssl/md5.h"
 #include "third_party/openssl/sha.h"
 #include "third_party/openssl/bn.h"
+#include "third_party/x11/keysymdef.h"
 
 void info(const char *format, ...);
 
@@ -17,7 +17,7 @@ void info(const char *format, ...);
 #pragma comment(lib,"../rdesktop-wrap/third_party/openssl/libssl.lib")
 #endif
 
-Client::Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username) : canned_caps{
+Client::Client(XWin_Ui *ui, TcpTool *tool, char *hostname, char *username) : canned_caps{
         0x01, 0x00, 0x00, 0x00, 0x09, 0x04, 0x00, 0x00, 0x04,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00,
@@ -37,10 +37,11 @@ Client::Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username) : c
         0xFE, 0x00, 0x80, 0x00, 0xFE,
         0x00, 0x00, 0x01, 0x40, 0x00, 0x00, 0x08, 0x00, 0x01, 0x00, 0x01,
         0x02, 0x00, 0x00, 0x00
-}, licence_issued(false), keylayout(0x409), tcp_port_rdp(TCP_PORT_RDP),
-                                             bitmap_compression(true), orders(true), encryption(true),
-                                             desktop_save(true), remote_modifier_state(0), xwin_ui(ui),
-                                             tcptool(tool) {
+}, licence_issued(false), keylayout(0x409),
+                                                                             bitmap_compression(true), encryption(true),
+                                                                             desktop_save(true),
+                                                                             remote_modifier_state(0), xwin_ui(ui),
+                                                                             tcptool(tool) {
     pad_54 = new uint8[40];
     for (int i = 0; i < 40; ++i) {
         pad_54[i] = 54;
@@ -53,13 +54,14 @@ Client::Client(XWin_Ui *ui, TcpTool *tool, char * hostname, char * username) : c
     this->username = username;
     this->width = xwin_ui->get_width();
     this->height = xwin_ui->get_height();
+    min_keycode = 8;
 }
 
 void Client::rdp_main_loop() {
     uint8 type;
     STREAM s;
 
-    if ((s = rdp_recv(&type)) != NULL) {
+    if ((s = rdp_recv(&type)) != nullptr) {
         switch (type) {
             case RDP_PDU_DEMAND_ACTIVE:
                 process_demand_active(s);
@@ -85,10 +87,10 @@ STREAM Client::rdp_recv(uint8 *type) {
     static STREAM rdp_s;
     uint16 length, pdu_type;
 
-    if ((rdp_s == NULL) || (next_packet >= rdp_s->end)) {
+    if ((rdp_s == nullptr) || (next_packet >= rdp_s->end)) {
         rdp_s = sec_recv();
-        if (rdp_s == NULL)
-            return NULL;
+        if (rdp_s == nullptr)
+            return nullptr;
 
         next_packet = rdp_s->p;
     } else {
@@ -171,7 +173,7 @@ void Client::rdp_send_data(STREAM s, uint8 data_pdu_type) {
 }
 
 /* Output a string in Unicode */
-void Client::rdp_out_unistr(STREAM s, char *string, int len) {
+void Client::rdp_out_unistr(STREAM s, const char *string, int len) {
     int i = 0, j = 0;
 
     len += 2;
@@ -230,7 +232,7 @@ void Client::rdp_send_control(uint16 action) {
 }
 
 /* Send a synchronisation PDU */
-void Client::rdp_send_synchronise(void) {
+void Client::rdp_send_synchronise() {
     STREAM s;
 
     s = rdp_init_data(4);
@@ -294,7 +296,7 @@ void Client::rdp_out_general_caps(STREAM s) {
 }
 
 /* Output bitmap capability set */
-void Client::rdp_out_bitmap_caps(STREAM s) {
+void Client::rdp_out_bitmap_caps(STREAM s) const {
     out_uint16_le(s, RDP_CAPSET_BITMAP);
     out_uint16_le(s, RDP_CAPLEN_BITMAP);
 
@@ -313,7 +315,7 @@ void Client::rdp_out_bitmap_caps(STREAM s) {
 }
 
 /* Output order capability set */
-void Client::rdp_out_order_caps(STREAM s) {
+void Client::rdp_out_order_caps(STREAM s) const {
     uint8 order_caps[32];
 
 
@@ -411,28 +413,6 @@ void Client::rdp_out_colcache_caps(STREAM s) {
     out_uint16(s, 0);    /* pad */
 }
 
-uint8 canned_caps[] = {
-        0x01, 0x00, 0x00, 0x00, 0x09, 0x04, 0x00, 0x00, 0x04,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x0C, 0x00, 0x08, 0x00, 0x01,
-        0x00, 0x00, 0x00, 0x0E, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00,
-        0x10, 0x00, 0x34, 0x00, 0xFE,
-        0x00, 0x04, 0x00, 0xFE, 0x00, 0x04, 0x00, 0xFE, 0x00, 0x08, 0x00,
-        0xFE, 0x00, 0x08, 0x00, 0xFE,
-        0x00, 0x10, 0x00, 0xFE, 0x00, 0x20, 0x00, 0xFE, 0x00, 0x40, 0x00,
-        0xFE, 0x00, 0x80, 0x00, 0xFE,
-        0x00, 0x00, 0x01, 0x40, 0x00, 0x00, 0x08, 0x00, 0x01, 0x00, 0x01,
-        0x02, 0x00, 0x00, 0x00
-};
-
 /* Output unknown capability set */
 void Client::rdp_out_unknown_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_UNKNOWN);
@@ -442,7 +422,7 @@ void Client::rdp_out_unknown_caps(STREAM s) {
 }
 
 /* Send a confirm active PDU */
-void Client::rdp_send_confirm_active(void) {
+void Client::rdp_send_confirm_active() {
     STREAM s;
     uint16 caplen =
             RDP_CAPLEN_GENERAL + RDP_CAPLEN_BITMAP + RDP_CAPLEN_ORDER +
@@ -481,8 +461,6 @@ void Client::process_demand_active(STREAM s) {
     uint8 type;
 
     in_uint32_le(s, rdp_shareid);
-
-    info("DEMAND_ACTIVE(id=0x%x)\n", rdp_shareid);
 
     rdp_send_confirm_active();
     rdp_send_synchronise();
@@ -524,7 +502,7 @@ void Client::process_pointer_pdu(STREAM s) {
             in_uint16_le(s, datalen);
             in_uint8p(s, data, datalen);
             in_uint8p(s, mask, masklen);
-            cursor = xwin_ui->ui_create_cursor(x, y, width, height, mask, data);
+            cursor = XWin_Ui::ui_create_cursor(x, y, width, height, mask, data);
             xwin_ui->ui_set_cursor(cursor);
             xwin_ui->cache_put_cursor(cache_idx, cursor);
             break;
@@ -562,9 +540,6 @@ void Client::process_bitmap_updates(STREAM s) {
         cx = right - left + 1;
         cy = bottom - top + 1;
 
-        info("UPDATE(l=%d,t=%d,r=%d,b=%d,w=%d,h=%d,cmp=%d)\n",
-             left, top, right, bottom, width, height, compress);
-
         if (!compress) {
             int y;
             bmpdata = new uint8[width * height];
@@ -572,7 +547,7 @@ void Client::process_bitmap_updates(STREAM s) {
                 in_uint8a(s, &bmpdata[(height - y - 1) * width], width);
             }
             xwin_ui->ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
-            delete []bmpdata;
+            delete[]bmpdata;
             continue;
         }
 
@@ -586,7 +561,7 @@ void Client::process_bitmap_updates(STREAM s) {
             xwin_ui->ui_paint_bitmap(left, top, cx, cy, width, height, bmpdata);
         }
 
-        delete []bmpdata;
+        delete[]bmpdata;
     }
 }
 
@@ -612,7 +587,7 @@ void Client::process_palette(STREAM s) {
 
     xwin_ui->ui_create_colourmap(&map);
 
-    delete []map.colours;
+    delete[]map.colours;
 }
 
 /* Process an update PDU */
@@ -679,12 +654,12 @@ BOOL Client::rdp_connect(char *server, uint32 flags, char *domain, char *passwor
     if (!sec_connect(server))
         return false;
 
-    rdp_send_logon_info(flags, domain, (char *)username, password, command, directory);
+    rdp_send_logon_info(flags, domain, (char *) username, password, command, directory);
     return true;
 }
 
 /* Disconnect from the RDP layer */
-void Client::rdp_disconnect(void) {
+void Client::rdp_disconnect() {
     sec_disconnect();
 }
 
@@ -793,7 +768,7 @@ BOOL Client::mcs_recv_connect_response(STREAM mcs_data) {
     STREAM s;
 
     s = iso_recv();
-    if (s == NULL)
+    if (s == nullptr)
         return false;
 
     ber_parse_header(s, MCS_CONNECT_RESPONSE, &length);
@@ -823,7 +798,7 @@ BOOL Client::mcs_recv_connect_response(STREAM mcs_data) {
 }
 
 /* Send an EDrq message (ASN.1 PER) */
-void Client::mcs_send_edrq(void) {
+void Client::mcs_send_edrq() {
     STREAM s;
 
     s = iso_init(5);
@@ -837,7 +812,7 @@ void Client::mcs_send_edrq(void) {
 }
 
 /* Send an AUrq message (ASN.1 PER) */
-void Client::mcs_send_aurq(void) {
+void Client::mcs_send_aurq() {
     STREAM s;
 
     s = iso_init(1);
@@ -854,7 +829,7 @@ BOOL Client::mcs_recv_aucf(uint16 *mcs_userid) {
     STREAM s;
 
     s = iso_recv();
-    if (s == NULL)
+    if (s == nullptr)
         return false;
 
     in_uint8(s, opcode);
@@ -889,12 +864,12 @@ void Client::mcs_send_cjrq(uint16 chanid) {
 }
 
 /* Expect a CJcf message (ASN.1 PER) */
-BOOL Client::mcs_recv_cjcf(void) {
+BOOL Client::mcs_recv_cjcf() {
     uint8 opcode, result;
     STREAM s;
 
     s = iso_recv();
-    if (s == NULL)
+    if (s == nullptr)
         return false;
 
     in_uint8(s, opcode);
@@ -944,13 +919,13 @@ void Client::mcs_send(STREAM s) {
 }
 
 /* Receive an MCS transport data packet */
-STREAM Client::mcs_recv(void) {
+STREAM Client::mcs_recv() {
     uint8 opcode, appid, length;
     STREAM s;
 
     s = iso_recv();
-    if (s == NULL)
-        return NULL;
+    if (s == nullptr)
+        return nullptr;
 
     in_uint8(s, opcode);
     appid = opcode >> 2;
@@ -958,7 +933,7 @@ STREAM Client::mcs_recv(void) {
         if (appid != MCS_DPUM) {
             info("expected data, got %d\n", opcode);
         }
-        return NULL;
+        return nullptr;
     }
 
     in_uint8s(s, 5);    /* userid, chanid, flags */
@@ -1000,13 +975,13 @@ BOOL Client::mcs_connect(char *server, STREAM mcs_data) {
 }
 
 /* Disconnect from the MCS layer */
-void Client::mcs_disconnect(void) {
+void Client::mcs_disconnect() {
     iso_disconnect();
 }
 
 BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input, int size) {
     unsigned char *end = input + size;
-    unsigned char *prevline = NULL, *line = NULL;
+    unsigned char *prevline = nullptr, *line = nullptr;
     int opcode, count, offset, isfillormix, x = width;
     int lastopcode = -1, insertmix = false, bicolour = false;
     uint8 code, colour1 = 0, colour2 = 0;
@@ -1063,7 +1038,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
         /* Read preliminary data */
         switch (opcode) {
             case 0:    /* Fill */
-                if ((lastopcode == opcode) && !((x == width) && (prevline == NULL)))
+                if ((lastopcode == opcode) && !((x == width) && (prevline == nullptr)))
                     insertmix = true;
                 break;
             case 8:    /* Bicolour */
@@ -1086,7 +1061,8 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                 opcode = 0x02;
                 fom_mask = 5;
                 break;
-
+            default:
+                break;
         }
 
         lastopcode = opcode;
@@ -1108,7 +1084,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
             switch (opcode) {
                 case 0:    /* Fill */
                     if (insertmix) {
-                        if (prevline == NULL)
+                        if (prevline == nullptr)
                             line[x] = mix;
                         else
                             line[x] = prevline[x] ^ mix;
@@ -1118,7 +1094,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                         x++;
                     }
 
-                    if (prevline == NULL) {
+                    if (prevline == nullptr) {
                         REPEAT(line[x] = 0);
                     } else {
                         REPEAT(line[x] = prevline[x]);
@@ -1126,7 +1102,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                     break;
 
                 case 1:    /* Mix */
-                    if (prevline == NULL) {
+                    if (prevline == nullptr) {
                         REPEAT(line[x] = mix);
                     } else {
                         REPEAT(line[x] = prevline[x] ^ mix);
@@ -1134,7 +1110,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                     break;
 
                 case 2:    /* Fill or Mix */
-                    if (prevline == NULL) {
+                    if (prevline == nullptr) {
                         REPEAT(MASK_UPDATE();
                                        if (mask & mixmask) line[x] = mix;
                                        else
@@ -1213,21 +1189,21 @@ STREAM Client::iso_recv_msg(uint8 *code) {
     uint8 version;
 
     s = tcptool->tcp_recv(4);
-    if (s == NULL)
-        return NULL;
+    if (s == nullptr)
+        return nullptr;
 
     in_uint8(s, version);
     if (version != 3) {
         info("TPKT v%d\n", version);
-        return NULL;
+        return nullptr;
     }
 
     in_uint8s(s, 1);    /* pad */
     in_uint16_be(s, length);
 
     s = tcptool->tcp_recv(length - 4);
-    if (s == NULL)
-        return NULL;
+    if (s == nullptr)
+        return nullptr;
 
     in_uint8s(s, 1);    /* hdrlen */
     in_uint8(s, *code);
@@ -1270,13 +1246,13 @@ void Client::iso_send(STREAM s) {
 }
 
 /* Receive ISO transport data packet */
-STREAM Client::iso_recv(void) {
+STREAM Client::iso_recv() {
     STREAM s;
     uint8 code;
 
     s = iso_recv_msg(&code);
-    if (s == NULL)
-        return NULL;
+    if (s == nullptr)
+        return nullptr;
 
     if (code != ISO_PDU_DT) {
         info("expected DT, got 0x%x\n", code);
@@ -1295,7 +1271,7 @@ BOOL Client::iso_connect(char *server) {
 
     iso_send_msg(ISO_PDU_CR);
 
-    if (iso_recv_msg(&code) == NULL)
+    if (iso_recv_msg(&code) == nullptr)
         return false;
 
     if (code != ISO_PDU_CC) {
@@ -1308,37 +1284,11 @@ BOOL Client::iso_connect(char *server) {
 }
 
 /* Disconnect from the ISO layer */
-void Client::iso_disconnect(void) {
+void Client::iso_disconnect() {
     iso_send_msg(ISO_PDU_DR);
     tcptool->tcp_disconnect();
 }
 
-
-void Client::add_to_keymap(char *keyname, uint8 scancode, uint16 modifiers, char *mapname) {
-    throw not_implemented_error();
-}
-
-
-BOOL Client::xkeymap_read(char *mapname) {
-    throw not_implemented_error();
-}
-
-
-/* Before connecting and creating XWin_Ui */
-void Client::xkeymap_init(void) {
-    throw not_implemented_error();
-}
-
-/* Handles, for example, multi-scancode keypresses (which is not
-   possible via keymap-files) */
-BOOL Client::handle_special_keys(int key, uint32 ev_time, BOOL pressed) {
-    throw not_implemented_error();
-}
-
-
-key_translation Client::xkeymap_translate_key(uint32 keysym, unsigned int keycode, unsigned int state) {
-    throw not_implemented_error();
-}
 
 uint16 Client::xkeymap_translate_button(Qt::MouseButton button) {
     switch (button) {
@@ -1348,23 +1298,9 @@ uint16 Client::xkeymap_translate_button(Qt::MouseButton button) {
             return MOUSE_FLAG_BUTTON3;
         case Qt::MouseButton::RightButton:    /* right */
             return MOUSE_FLAG_BUTTON2;
+        default:
+            return 0;
     }
-
-    return 0;
-}
-
-char *Client::get_ksname(uint32 keysym) {
-    throw not_implemented_error();
-}
-
-
-void Client::ensure_remote_modifiers(uint32 ev_time, key_translation tr) {
-    throw not_implemented_error();
-}
-
-
-void Client::reset_modifier_keys(unsigned int state) {
-    throw not_implemented_error();
 }
 
 
@@ -1412,6 +1348,8 @@ void Client::update_modifier_state(uint8 scancode, BOOL pressed) {
                                 MapNumLockMask, newNumLockState);
             }
             break;
+        default:
+            break;
     }
 
 #ifdef WITH_DEBUG
@@ -1429,12 +1367,9 @@ void Client::rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode) {
     update_modifier_state(scancode, !(flags & RDP_KEYRELEASE));
 
     if (scancode & SCANCODE_EXTENDED) {
-        info("Sending extended scancode=0x%x, flags=0x%x\n",
-             scancode & ~SCANCODE_EXTENDED, flags);
         rdp_send_input(time, RDP_INPUT_SCANCODE, flags | KBD_FLAG_EXT,
                        scancode & ~SCANCODE_EXTENDED, 0);
     } else {
-        info("Sending scancode=0x%x, flags=0x%x\n", scancode, flags);
         rdp_send_input(time, RDP_INPUT_SCANCODE, flags, scancode, 0);
     }
 }
@@ -1453,11 +1388,6 @@ void Client::licence_generate_keys(uint8 *client_key, uint8 *server_key, uint8 *
 
     /* Generate RC4 key */
     sec_hash_16(licence_key, &session_key[16], client_key, server_key);
-}
-
-void Client::licence_generate_hwid(uint8 *hwid) {
-    buf_out_uint32(hwid, 2);
-    strncpy((char *) (hwid + 4), hostname, LICENCE_HWID_SIZE - 4);
 }
 
 /* Send a licence request packet */
@@ -1497,7 +1427,7 @@ void Client::licence_send_request(uint8 *client_random, uint8 *rsa_data, char *u
 
 /* Process a licence demand packet */
 void Client::licence_process_demand(STREAM s) {
-    uint8 null_data[SEC_MODULUS_SIZE];
+    uint8 nullptr_data[SEC_MODULUS_SIZE];
     uint8 *server_random;
 #ifdef SAVE_LICENCE
     uint8 signature[LICENCE_SIGNATURE_SIZE];
@@ -1510,54 +1440,11 @@ void Client::licence_process_demand(STREAM s) {
     /* Retrieve the server random from the incoming packet */
     in_uint8p(s, server_random, SEC_RANDOM_SIZE);
 
-    /* We currently use null client keys. This is a bit naughty but, hey,
+    /* We currently use nullptr client keys. This is a bit naughty but, hey,
        the security of licence negotiation isn't exactly paramount. */
-    memset(null_data, 0, sizeof(null_data));
-    licence_generate_keys(null_data, server_random, null_data);
-    licence_send_request(null_data, null_data, username, hostname);
-}
-
-/* Send an authentication response packet */
-void Client::licence_send_authresp(uint8 *token, uint8 *crypt_hwid, uint8 *signature) {
-    uint32 sec_flags = SEC_LICENCE_NEG;
-    uint16 length = 58;
-    STREAM s;
-
-    s = sec_init(sec_flags, length + 2);
-
-    out_uint16_le(s, LICENCE_TAG_AUTHRESP);
-    out_uint16_le(s, length);
-
-    out_uint16_le(s, 1);
-    out_uint16_le(s, LICENCE_TOKEN_SIZE);
-    out_uint8p(s, token, LICENCE_TOKEN_SIZE);
-
-    out_uint16_le(s, 1);
-    out_uint16_le(s, LICENCE_HWID_SIZE);
-    out_uint8p(s, crypt_hwid, LICENCE_HWID_SIZE);
-
-    out_uint8p(s, signature, LICENCE_SIGNATURE_SIZE);
-
-    s_mark_end(s);
-    sec_send(s, sec_flags);
-}
-
-/* Parse an authentication request packet */
-BOOL Client::licence_parse_authreq(STREAM s, uint8 **token, uint8 **signature) {
-    uint16 tokenlen;
-
-    in_uint8s(s, 6);    /* unknown: f8 3d 15 00 04 f6 */
-
-    in_uint16_le(s, tokenlen);
-    if (tokenlen != LICENCE_TOKEN_SIZE) {
-        info("token len %d\n", tokenlen);
-        return false;
-    }
-
-    in_uint8p(s, *token, tokenlen);
-    in_uint8p(s, *signature, LICENCE_SIGNATURE_SIZE);
-
-    return s_check_end(s);
+    memset(nullptr_data, 0, sizeof(nullptr_data));
+    licence_generate_keys(nullptr_data, server_random, nullptr_data);
+    licence_send_request(nullptr_data, nullptr_data, username, hostname);
 }
 
 /* Process an authentication request packet */
@@ -1591,7 +1478,6 @@ void Client::licence_process(STREAM s) {
             break;
 
         case LICENCE_TAG_REISSUE:
-            break;
 
         case LICENCE_TAG_RESULT:
             break;
@@ -1721,9 +1607,6 @@ void Client::process_destblt(STREAM s, DESTBLT_ORDER *os, uint32 present, BOOL d
     if (present & 0x10)
         in_uint8(s, os->opcode);
 
-    info("DESTBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d)\n",
-         os->opcode, os->x, os->y, os->cx, os->cy);
-
     xwin_ui->ui_destblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy);
 }
 
@@ -1752,11 +1635,8 @@ void Client::process_patblt(STREAM s, PATBLT_ORDER *os, uint32 present, BOOL del
 
     rdp_parse_brush(s, &os->brush, present >> 7);
 
-    info("PATBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,bs=%d,bg=0x%x,fg=0x%x)\n", os->opcode, os->x,
-         os->y, os->cx, os->cy, os->brush.style, os->bgcolour, os->fgcolour);
-
     xwin_ui->ui_patblt(ROP2_P(os->opcode), os->x, os->y, os->cx, os->cy,
-                       &os->brush, os->bgcolour, os->fgcolour);
+                       &os->brush, os->fgcolour);
 }
 
 /* Process a screen blt order */
@@ -1781,9 +1661,6 @@ void Client::process_screenblt(STREAM s, SCREENBLT_ORDER *os, uint32 present, BO
 
     if (present & 0x0040)
         rdp_in_coord(s, &os->srcy, delta);
-
-    info("SCREENBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,srcx=%d,srcy=%d)\n",
-         os->opcode, os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
 
     xwin_ui->ui_screenblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, os->srcx, os->srcy);
 }
@@ -1811,9 +1688,6 @@ void Client::process_line(STREAM s, LINE_ORDER *os, uint32 present, BOOL delta) 
         in_uint8(s, os->opcode);
 
     rdp_parse_pen(s, &os->pen, present >> 7);
-
-    info("LINE(op=0x%x,sx=%d,sy=%d,dx=%d,dx=%d,fg=0x%x)\n",
-         os->opcode, os->startx, os->starty, os->endx, os->endy, os->pen.colour);
 
     if (os->opcode < 0x01 || os->opcode > 0x10) {
         info("bad ROP2 0x%x\n", os->opcode);
@@ -1864,9 +1738,6 @@ void Client::process_desksave(STREAM s, DESKSAVE_ORDER *os, uint32 present, BOOL
     if (present & 0x20)
         in_uint8(s, os->action);
 
-    info("DESKSAVE(l=%d,t=%d,r=%d,b=%d,off=%d,op=%d)\n",
-         os->left, os->top, os->right, os->bottom, os->offset, os->action);
-
     width = os->right - os->left + 1;
     height = os->bottom - os->top + 1;
 
@@ -1908,11 +1779,8 @@ void Client::process_memblt(STREAM s, MEMBLT_ORDER *os, uint32 present, BOOL del
 
     if (present & 0x0100) in_uint16_le(s, os->cache_idx);
 
-    info("MEMBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,id=%d,idx=%d)\n",
-         os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx);
-
     bitmap = xwin_ui->cache_get_bitmap(os->cache_id, os->cache_idx);
-    if (bitmap == NULL)
+    if (bitmap == nullptr)
         return;
 
     xwin_ui->ui_memblt(ROP2_S(os->opcode), os->x, os->y, os->cx, os->cy, bitmap, os->srcx, os->srcy);
@@ -1960,12 +1828,8 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
 
     if (present & 0x010000) in_uint16_le(s, os->unknown);
 
-    info("TRIBLT(op=0x%x,x=%d,y=%d,cx=%d,cy=%d,id=%d,idx=%d,bs=%d,bg=0x%x,fg=0x%x)\n",
-         os->opcode, os->x, os->y, os->cx, os->cy, os->cache_id, os->cache_idx,
-         os->brush.style, os->bgcolour, os->fgcolour);
-
     bitmap = xwin_ui->cache_get_bitmap(os->cache_id, os->cache_idx);
-    if (bitmap == NULL)
+    if (bitmap == nullptr)
         return;
 
     xwin_ui->ui_triblt(os->opcode, os->x, os->y, os->cx, os->cy,
@@ -1973,7 +1837,7 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
 }
 
 /* Parse a delta co-ordinate in polyline order form */
-int Client::parse_delta(uint8 *buffer, int *offset) {
+int Client::parse_delta(const uint8 *buffer, int *offset) {
     int value = buffer[(*offset)++];
     int two_byte = value & 0x80;
 
@@ -2129,7 +1993,7 @@ void Client::process_raw_bmpcache(STREAM s) {
     }
 
     bitmap = xwin_ui->ui_create_bitmap(width, height, inverted);
-    delete []inverted;
+    delete[]inverted;
     xwin_ui->cache_put_bitmap(cache_id, cache_idx, bitmap);
 }
 
@@ -2159,7 +2023,7 @@ void Client::process_bmpcache(STREAM s) {
         xwin_ui->cache_put_bitmap(cache_id, cache_idx, bitmap);
     }
 
-    delete []bmpdata;
+    delete[]bmpdata;
 }
 
 /* Process a colourmap cache order */
@@ -2185,7 +2049,7 @@ void Client::process_colcache(STREAM s) {
 
     xwin_ui->ui_create_colourmap(&map);
 
-    delete []map.colours;
+    delete[]map.colours;
 }
 
 /* Process a font cache order */
@@ -2296,7 +2160,6 @@ void Client::process_orders(STREAM s) {
 
             rdp_in_present(s, &present, order_flags, size);
 
-            info("order_flags == %d\n", order_flags);
             if (order_flags & RDP_ORDER_BOUNDS) {
                 if (!(order_flags & RDP_ORDER_LASTBOUNDS))
                     rdp_parse_bounds(s, &os->bounds);
@@ -2368,7 +2231,7 @@ void Client::process_orders(STREAM s) {
 }
 
 /* Reset order state */
-void Client::reset_order_state(void) {
+void Client::reset_order_state() {
     memset(&order_state, 0, sizeof(order_state));
     order_state.order_type = RDP_ORDER_PATBLT;
 }
@@ -2634,7 +2497,7 @@ void Client::sec_send(STREAM s, uint32 flags) {
 }
 
 /* Transfer the client random to the server */
-void Client::sec_establish_key(void) {
+void Client::sec_establish_key() {
     uint32 length = SEC_MODULUS_SIZE + SEC_PADDING_SIZE;
     uint32 flags = SEC_CLIENT_RANDOM;
     STREAM s;
@@ -2844,11 +2707,11 @@ void Client::sec_process_mcs_data(STREAM s) {
 }
 
 /* Receive secure transport packet */
-STREAM Client::sec_recv(void) {
+STREAM Client::sec_recv() {
     uint32 sec_flags;
     STREAM s;
 
-    while ((s = mcs_recv()) != NULL) {
+    while ((s = mcs_recv()) != nullptr) {
         if (encryption || !licence_issued) {
             in_uint32_le(s, sec_flags);
 
@@ -2866,7 +2729,7 @@ STREAM Client::sec_recv(void) {
         return s;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /* Establish a secure connection */
@@ -2875,7 +2738,7 @@ BOOL Client::sec_connect(char *server) {
 
     /* We exchange some RDP data during the MCS-Connect */
     mcs_data.size = 512;
-    mcs_data.p = mcs_data.data = new uchar[mcs_data.size];
+    mcs_data.p = mcs_data.data = new uint8[mcs_data.size];
     sec_out_mcs_data(&mcs_data);
 
     if (!mcs_connect(server, &mcs_data))
@@ -2884,12 +2747,12 @@ BOOL Client::sec_connect(char *server) {
     sec_process_mcs_data(&mcs_data);
     if (encryption)
         sec_establish_key();
-    delete []mcs_data.data;
+    delete[]mcs_data.data;
     return true;
 }
 
 /* Disconnect a connection */
-void Client::sec_disconnect(void) {
+void Client::sec_disconnect() {
     mcs_disconnect();
 }
 
@@ -2899,8 +2762,12 @@ XWin_Ui *Client::getUi() {
 
 Client::~Client() {
     rdp_disconnect();
-    delete []pad_54;
-    delete []pad_92;
+    delete[]pad_54;
+    delete[]pad_92;
+}
+
+int Client::getminkeycode() const {
+    return min_keycode;
 }
 
 

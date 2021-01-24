@@ -1,12 +1,12 @@
 #ifndef TCP_H
 #define TCP_H
 
-#include <errno.h>        /* errno */
+#include <cerrno>        /* errno */
 #include "constants.h"
 #include <QTcpSocket>
 #include <QHostInfo>
 
-class TcpTool: public QObject {
+class TcpTool : public QObject {
 Q_OBJECT
 private:
     QTcpSocket *sock;
@@ -17,13 +17,13 @@ private:
 public:
     TcpTool();
 
-    virtual ~TcpTool();
+    ~TcpTool() override;
 
     STREAM tcp_init(int maxlen);
 
     BOOL tcp_connect(char *server);
 
-    void tcp_disconnect(void);
+    void tcp_disconnect();
 
     STREAM tcp_recv(unsigned length);
 

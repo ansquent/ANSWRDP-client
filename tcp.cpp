@@ -36,7 +36,7 @@ TcpTool::TcpTool() {
 /* Initialise TCP transport data packet */
 STREAM TcpTool::tcp_init(int maxlen) {
     if (maxlen > out.size) {
-        delete []out.data;
+        delete[]out.data;
         out.data = new unsigned char[maxlen];
         out.size = maxlen;
     }
@@ -67,9 +67,9 @@ void TcpTool::tcp_send(STREAM s) {
 
 /* Receive a message on the TCP layer */
 STREAM TcpTool::tcp_recv(unsigned length) {
-    int rcvd = 0;
+    int rcvd;
     if (length > in.size) {
-        delete []in.data;
+        delete[]in.data;
         in.data = new unsigned char[length];
         in.size = length;
     }
@@ -77,7 +77,7 @@ STREAM TcpTool::tcp_recv(unsigned length) {
     while (length > 0) {
         if (sock->bytesAvailable() <= 0) {
             if (!sock->waitForReadyRead(3000))
-                return NULL;
+                return nullptr;
         }
         rcvd = sock->read((char *) in.end, length);
         if (rcvd <= 0) {
@@ -99,22 +99,22 @@ BOOL TcpTool::tcp_connect(char *server) {
     }
 
     in.size = 4096;
-    in.data = new uchar[in.size];
+    in.data = new uint8[in.size];
 
     out.size = 4096;
-    out.data = new uchar[out.size];
+    out.data = new uint8[out.size];
     return true;
 }
 
 /* Disconnect on the TCP layer */
-void TcpTool::tcp_disconnect(void) {
+void TcpTool::tcp_disconnect() {
     sock->disconnectFromHost();
 }
 
 TcpTool::~TcpTool() {
     delete sock;
-    delete []in.data;
-    delete []out.data;
+    delete[]in.data;
+    delete[]out.data;
 }
 
 

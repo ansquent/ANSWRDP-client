@@ -27,14 +27,10 @@
 #include <QRgb>
 #include <algorithm>
 #include <QBitmap>
-#include <cassert>
-#include <iostream>
 #include "xwin.h"
 
 void info(const char *format, ...);
 
-#define MWM_HINTS_DECORATIONS   (1L << 1)
-#define PROP_MOTIF_WM_HINTS_ELEMENTS    5
 typedef struct {
     uint32 flags;
     uint32 functions;
@@ -43,22 +39,6 @@ typedef struct {
     uint32 status;
 }
         PropMotifWmHints;
-
-#include <cstdio>
-
-void print_to_file(const char *filename, uchar *data, int width, int height) {
-    FILE *fp = fopen(filename, "w");
-    if (!fp) {
-        info("ERROR");
-    }
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            fprintf(fp, "%s ", data[i * width + j] ? "@" : " ");
-        }
-        fprintf(fp, "\n");
-    }
-    fclose(fp);
-}
 
 XWin_Ui::XWin_Ui(int width, int height, int bpp) {
     //info("XWin_Ui");
@@ -69,64 +49,43 @@ XWin_Ui::XWin_Ui(int width, int height, int bpp) {
     init_rop2_map();
     memset_0();
     pixmap = new QPixmap(width, height);
-    colmap = NULL;
+    colmap = nullptr;
+    this->clipx = 0;
+    this->clipy = 0;
+    this->clipcx = width;
+    this->clipcy = height;
 }
 
 XWin_Ui::~XWin_Ui() {
     //info("~XWin_Ui");
-    delete []rop2_map;
-    delete []colmap;
+    delete[]rop2_map;
+    delete[]colmap;
     delete pixmap;
     /* cursorcache delete */
-    for (size_t i = 0; i < NUM_ELEMENTS(cursorcache); ++i){
+    for (size_t i = 0; i < NUM_ELEMENTS(cursorcache); ++i) {
         ui_destroy_cursor(cursorcache[i]);
-        cursorcache[i] = NULL;
+        cursorcache[i] = nullptr;
     }
     /* deskcache delete */
 
     /* textcache delete */
-    for (size_t i = 0; i < NUM_ELEMENTS(textcache); ++i){
-        delete [] textcache[i].data;
+    for (size_t i = 0; i < NUM_ELEMENTS(textcache); ++i) {
+        delete[] textcache[i].data;
     }
     /* fontcache delete */
-    for (size_t i = 0; i < sizeof(fontcache) / sizeof(fontcache[0]); ++i){
-        for (int j = 0; j < sizeof(fontcache[0]) / sizeof(fontcache[0][0]); ++j){
+    for (size_t i = 0; i < sizeof(fontcache) / sizeof(fontcache[0]); ++i) {
+        for (int j = 0; j < sizeof(fontcache[0]) / sizeof(fontcache[0][0]); ++j) {
             ui_destroy_glyph(fontcache[i][j].pixmap);
         }
     }
     /* bmpcache delete */
-    for (size_t i = 0; i < sizeof(bmpcache) / sizeof(bmpcache[0]); ++i){
-        for (int j = 0; j < sizeof(bmpcache[0]) / sizeof(bmpcache[0][0]); ++j){
+    for (size_t i = 0; i < sizeof(bmpcache) / sizeof(bmpcache[0]); ++i) {
+        for (int j = 0; j < sizeof(bmpcache[0]) / sizeof(bmpcache[0][0]); ++j) {
             ui_destroy_bitmap(bmpcache[i][j]);
         }
     }
 }
 
-void
-XWin_Ui::mwm_hide_decorations(void) {
-    info("mwm_hide_decorations not implemented");
-    throw not_implemented_error();
-}
-
-BOOL
-XWin_Ui::get_key_state(unsigned int state, uint32 keysym) {
-    info("get_key_state not implemented");
-    throw not_implemented_error();
-}
-
-void
-XWin_Ui::xwin_toggle_fullscreen(void) {
-    info("xwin_toggle_fullscreen not implemented");
-    throw not_implemented_error();
-}
-
-
-/* Returns 0 after user quit, 1 otherwise */
-int
-XWin_Ui::ui_select(int rdp_socket) {
-    info("ui_select not implemented");
-    throw not_implemented_error();
-}
 
 void
 XWin_Ui::ui_move_pointer(int x, int y) {
@@ -139,10 +98,10 @@ XWin_Ui::ui_create_bitmap(int width, int height, uint8 *data) {
     //info("ui_create_bitmap");
     uint8 *tdata = translate_image(width, height, data);
     QImage *image = new QImage(width, height, QImage::Format_RGB32);
-    for (int i = 0; i < height; ++i){
+    for (int i = 0; i < height; ++i) {
         memcpy(image->scanLine(i), &tdata[i * width * bpp / 8], width * bpp / 8);
     }
-    delete []tdata;
+    delete[]tdata;
     return image;
 }
 
@@ -151,15 +110,16 @@ XWin_Ui::ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, ui
     //info("ui_paint_bitmap");
     uint8 *tdata = translate_image(width, height, data);
     QImage *image = new QImage(width, height, QImage::Format_RGB32);
-    for (int i = 0; i < height; ++i){
+    for (int i = 0; i < height; ++i) {
         memcpy(image->scanLine(i), &tdata[i * width * bpp / 8], width * bpp / 8);
     }
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     QRect srcRect(0, 0, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, *image, srcRect);
     delete image;
     delete painter;
-    delete []tdata;
+    delete[]tdata;
 }
 
 void
@@ -169,7 +129,7 @@ XWin_Ui::ui_destroy_bitmap(HRDPBITMAP bmp) {
 
 
 HGLYPH
-XWin_Ui::ui_create_glyph(int width, int height, uint8 *data) {
+XWin_Ui::ui_create_glyph(int width, int height, const uint8 *data) {
     //info("ui_create_glyph");
     uint8 *convdata = new uint8[width * height];
     memset(convdata, 0, sizeof(uint8) * width * height);
@@ -182,10 +142,10 @@ XWin_Ui::ui_create_glyph(int width, int height, uint8 *data) {
         }
     }
     QImage *image = new QImage(width, height, QImage::Format_Grayscale8);
-    for (int i = 0; i < height; ++i){
+    for (int i = 0; i < height; ++i) {
         memcpy(image->scanLine(i), convdata + i * width, width);
     }
-    delete []convdata;
+    delete[]convdata;
     return image;
 }
 
@@ -200,7 +160,7 @@ XWin_Ui::ui_create_cursor(unsigned int x, unsigned int y, int width, int height,
                           uint8 *andmask, uint8 *xormask) {
     //info("ui_create_cursor not implemented");
     //throw not_implemented_error();
-    return NULL;
+    return nullptr;
 }
 
 void
@@ -218,7 +178,7 @@ XWin_Ui::ui_destroy_cursor(HRDPCURSOR cursor) {
 void
 XWin_Ui::ui_create_colourmap(COLOURMAP *colours) {
     //info("ui_create_colourmap");
-    delete []colmap;
+    delete[]colmap;
     int n = std::min(256, (int) colours->ncolours);
     colmap = new unsigned[n];
     for (int i = 0; i < n; i++) {
@@ -231,17 +191,23 @@ XWin_Ui::ui_create_colourmap(COLOURMAP *colours) {
 void
 XWin_Ui::ui_set_clip(int x, int y, int cx, int cy) {
     //info("ui_set_clip");
-    return;
+    this->clipx = x;
+    this->clipy = y;
+    this->clipcx = cx;
+    this->clipcy = cy;
 }
 
 void
-XWin_Ui::ui_reset_clip(void) {
-    //info("ui_reset_clip");
-    return;
+XWin_Ui::ui_reset_clip() {
+//    info("ui_reset_clip");
+    this->clipx = 0;
+    this->clipy = 0;
+    this->clipcx = width;
+    this->clipcy = height;
 }
 
 void
-XWin_Ui::ui_bell(void) {
+XWin_Ui::ui_bell() {
     //info("ui_bell");
     QApplication::beep();
 }
@@ -251,6 +217,7 @@ XWin_Ui::ui_destblt(uint8 opcode,
         /* dest */ int x, int y, int cx, int cy) {
     //info("ui_destblt");
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QBrush brush;
     brush.setStyle(Qt::BrushStyle::SolidPattern);
@@ -259,12 +226,11 @@ XWin_Ui::ui_destblt(uint8 opcode,
 }
 
 void
-XWin_Ui::ui_patblt(uint8 opcode,
-        /* dest */ int x, int y, int cx, int cy,
-        /* brush */ BRUSH *brush, int bgcolour, int fgcolour) {
+XWin_Ui::ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH *brush, int fgcolour) {
     //info("ui_patblt");
     uint8 ipattern[8];
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QBrush realBrush;
     QPen pen;
@@ -277,8 +243,8 @@ XWin_Ui::ui_patblt(uint8 opcode,
             break;
         case 3:
             for (int i = 0; i != 8; i++)
-				ipattern[7 - i] = brush->pattern[i];
-            QImage * image = ui_create_glyph(8, 8, ipattern);
+                ipattern[7 - i] = brush->pattern[i];
+            QImage *image = ui_create_glyph(8, 8, ipattern);
             QBitmap fill = QBitmap::fromImage(*image);
             realBrush.setColor(colmap[fgcolour]);
             realBrush.setTexture(fill);
@@ -298,6 +264,7 @@ XWin_Ui::ui_screenblt(uint8 opcode,
     //info("ui_screenblt");
     QImage src = pixmap->toImage();
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, src, srcRect);
@@ -310,6 +277,7 @@ XWin_Ui::ui_memblt(uint8 opcode,
         /* src */ HRDPBITMAP src, int srcx, int srcy) {
     //info("ui_memblt");
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, *src, srcRect);
@@ -327,18 +295,18 @@ XWin_Ui::ui_triblt(uint8 opcode,
     switch (opcode) {
         case 0x69:    /* PDSxxn */
             ui_memblt(ROP2_XOR, x, y, cx, cy, src, srcx, srcy);
-            ui_patblt(ROP2_NXOR, x, y, cx, cy, brush, bgcolour, fgcolour);
+            ui_patblt(ROP2_NXOR, x, y, cx, cy, brush, fgcolour);
             break;
 
         case 0xb8:    /* PSDPxax */
-            ui_patblt(ROP2_XOR, x, y, cx, cy, brush, bgcolour, fgcolour);
+            ui_patblt(ROP2_XOR, x, y, cx, cy, brush, fgcolour);
             ui_memblt(ROP2_AND, x, y, cx, cy, src, srcx, srcy);
-            ui_patblt(ROP2_XOR, x, y, cx, cy, brush, bgcolour, fgcolour);
+            ui_patblt(ROP2_XOR, x, y, cx, cy, brush, fgcolour);
             break;
 
         case 0xc0:    /* PSa */
             ui_memblt(ROP2_COPY, x, y, cx, cy, src, srcx, srcy);
-            ui_patblt(ROP2_AND, x, y, cx, cy, brush, bgcolour, fgcolour);
+            ui_patblt(ROP2_AND, x, y, cx, cy, brush, fgcolour);
             break;
 
         default:
@@ -353,6 +321,7 @@ XWin_Ui::ui_line(uint8 opcode,
         /* pen */ PEN *pen) {
     //info("ui_line");
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QPen mypen;
     mypen.setColor(colmap[pen->colour]);
@@ -367,6 +336,7 @@ XWin_Ui::ui_rect(
         /* brush */ int colour) {
     //info("ui_rect");
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     QBrush brush;
     brush.setColor(colmap[colour]);
     brush.setStyle(Qt::BrushStyle::SolidPattern);
@@ -382,13 +352,12 @@ XWin_Ui::draw_glyph(int x, int y, QImage *glyphImage, int fgcolor) {
     int bpp = image.depth() / 8;
     int glyph_width = glyphImage->width();
     int glyph_height = glyphImage->height();
-    //uchar * bs = new uchar[width * height * bpp * sizeof(uchar)];
-    uchar * bs = glyphImage->bits();
+    //uint8 * bs = new uint8[width * height * bpp * sizeof(uint8)];
     for (int i = 0; i < glyph_height; ++i) {
         for (int j = 0; j < glyph_width; ++j) {
-            uchar * pixel = glyphImage->scanLine(i) + j;
+            uint8 *pixel = glyphImage->scanLine(i) + j;
             if (*pixel != 0) {
-                uchar *p = image.scanLine(y + i) + ((x + j) * bpp);
+                uint8 *p = image.scanLine(y + i) + ((x + j) * bpp);
                 *((unsigned int *) p) = colmap[fgcolor];
             }
         }
@@ -416,7 +385,7 @@ void XWin_Ui::DO_GLYPH(uint8 &font, unsigned char *ttext, int &idx,
                 x += xyoffset;
         }
     }
-    if (glyph != NULL) {
+    if (glyph != nullptr) {
         draw_glyph(x + glyph->offset, y + glyph->baseline, glyph->pixmap,
                    fgcolour);
         if (flags & TEXT2_IMPLICIT_X)
@@ -431,9 +400,10 @@ XWin_Ui::ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y,
                       int fgcolour, uint8 *text, uint8 length) {
     //info("ui_draw_text");
     int i, j, xyoffset;
-    DATABLOB *entry = NULL;
+    DATABLOB *entry;
 
     QPainter *painter = new QPainter(pixmap);
+    painter->setClipRect(clipx, clipy, clipcx, clipcy);
     QBrush realBrush;
     realBrush.setStyle(Qt::BrushStyle::SolidPattern);
     realBrush.setColor(colmap[bgcolour]);
@@ -463,7 +433,7 @@ XWin_Ui::ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y,
 
             case 0xfe:
                 entry = cache_get_text(text[i + 1]);
-                if (entry != NULL) {
+                if (entry != nullptr) {
                     if ((((uint8 *) (entry->data))[1] ==
                          0) && (!(flags & TEXT2_IMPLICIT_X))) {
                         if (flags & TEXT2_VERTICAL)
@@ -502,11 +472,11 @@ XWin_Ui::ui_desktop_save(uint32 offset, int x, int y, int cx, int cy) {
     painter.drawPixmap(0, 0, *pixmap, x, y, cx, cy);
     QImage image = newPixmap.toImage();
     uint8 *data = new uint8[cx * cy * bpp / 8];
-    for (int i = 0; i < cy; ++i){
+    for (int i = 0; i < cy; ++i) {
         memcpy(data + i * cx * bpp / 8, image.scanLine(i), cx * bpp / 8);
     }
     cache_put_desktop(offset, cx, cy, image.bytesPerLine(), bpp / 8, data);
-    delete []data;
+    delete[]data;
 }
 
 void
@@ -515,7 +485,7 @@ XWin_Ui::ui_desktop_restore(uint32 offset, int x, int y, int cx, int cy) {
     offset *= bpp / 8;
     uint8 *data = cache_get_desktop(offset, cx, cy, bpp / 8);
     QImage image(width, height, bit_to_format[bpp]);
-    for (int i = 0; i < cy; ++i){
+    for (int i = 0; i < cy; ++i) {
         memcpy(image.scanLine(i), data + i * cx * bpp / 8, cx * bpp / 8);
     }
     ui_memblt(12, x, y, cx, cy, &image, 0, 0);
@@ -528,12 +498,12 @@ HRDPBITMAP XWin_Ui::cache_get_bitmap(uint8 cache_id, uint16 cache_idx) {
 
     if ((cache_id < NUM_ELEMENTS(bmpcache)) && (cache_idx < NUM_ELEMENTS(bmpcache[0]))) {
         bitmap = bmpcache[cache_id][cache_idx];
-        if (bitmap != NULL)
+        if (bitmap != nullptr)
             return bitmap;
     }
 
     info("get bitmap %d:%d\n", cache_id, cache_idx);
-    return NULL;
+    return nullptr;
 }
 
 /* Store a bitmap in the cache */
@@ -542,9 +512,9 @@ void XWin_Ui::cache_put_bitmap(uint8 cache_id, uint16 cache_idx, HRDPBITMAP bitm
     HRDPBITMAP old;
 
     if ((cache_id < NUM_ELEMENTS(bmpcache)) && (cache_idx < NUM_ELEMENTS(bmpcache[0]))) {
-        if (bmpcache[cache_id][cache_idx] != NULL){
+        if (bmpcache[cache_id][cache_idx] != nullptr) {
             ui_destroy_bitmap(bmpcache[cache_id][cache_idx]);
-            bmpcache[cache_id][cache_idx] = NULL;
+            bmpcache[cache_id][cache_idx] = nullptr;
         }
 
         bmpcache[cache_id][cache_idx] = bitmap;
@@ -560,12 +530,12 @@ FONTGLYPH *XWin_Ui::cache_get_font(uint8 font, uint16 character) {
 
     if ((font < NUM_ELEMENTS(fontcache)) && (character < NUM_ELEMENTS(fontcache[0]))) {
         glyph = &fontcache[font][character];
-        if (glyph->pixmap != NULL)
+        if (glyph->pixmap != nullptr)
             return glyph;
     }
 
     info("get font %d:%d\n", font, character);
-    return NULL;
+    return nullptr;
 }
 
 /* Store a glyph in the font cache */
@@ -576,9 +546,9 @@ void XWin_Ui::cache_put_font(uint8 font, uint16 character, uint16 offset,
 
     if ((font < NUM_ELEMENTS(fontcache)) && (character < NUM_ELEMENTS(fontcache[0]))) {
         glyph = &fontcache[font][character];
-        if (glyph->pixmap != NULL){
+        if (glyph->pixmap != nullptr) {
             ui_destroy_glyph(glyph->pixmap);
-            glyph->pixmap = NULL;
+            glyph->pixmap = nullptr;
         }
 
         glyph->offset = offset;
@@ -598,12 +568,12 @@ DATABLOB *XWin_Ui::cache_get_text(uint8 cache_id) {
 
     if (cache_id < NUM_ELEMENTS(textcache)) {
         text = &textcache[cache_id];
-        if (text->data != NULL)
+        if (text->data != nullptr)
             return text;
     }
 
     info("get text %d\n", cache_id);
-    return NULL;
+    return nullptr;
 }
 
 /* Store a text item in the cache */
@@ -613,8 +583,7 @@ void XWin_Ui::cache_put_text(uint8 cache_id, void *data, int length) {
 
     if (cache_id < NUM_ELEMENTS(textcache)) {
         text = &textcache[cache_id];
-        if (text->data != NULL)
-            delete []text->data;
+        delete[]text->data;
 
         text->data = new uint8[length];
         text->size = length;
@@ -635,7 +604,7 @@ uint8 *XWin_Ui::cache_get_desktop(uint32 offset, int cx, int cy, int bytes_per_p
     }
 
     info("get desktop %d:%d\n", offset, length);
-    return NULL;
+    return nullptr;
 }
 
 /* Store desktop data in the cache */
@@ -663,12 +632,12 @@ HRDPCURSOR XWin_Ui::cache_get_cursor(uint16 cache_idx) {
 
     if (cache_idx < NUM_ELEMENTS(cursorcache)) {
         cursor = cursorcache[cache_idx];
-        if (cursor != NULL)
+        if (cursor != nullptr)
             return cursor;
     }
 
-    info("get cursor %d\n", cache_idx);
-    return NULL;
+    //info("get cursor %d\n", cache_idx);
+    return nullptr;
 }
 
 /* Store cursor in cache */
@@ -676,7 +645,7 @@ void XWin_Ui::cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor) {
     //info("cache_put_cursor");
 
     if (cache_idx < NUM_ELEMENTS(cursorcache)) {
-        if (cursorcache[cache_idx] != NULL){
+        if (cursorcache[cache_idx] != nullptr) {
             ui_destroy_cursor(cursorcache[cache_idx]);
         }
 
@@ -686,10 +655,10 @@ void XWin_Ui::cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor) {
     }
 }
 
-int XWin_Ui::get_height() {
+int XWin_Ui::get_height() const {
     return height;
 }
 
-int XWin_Ui::get_width() {
+int XWin_Ui::get_width() const {
     return width;
 }

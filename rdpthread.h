@@ -9,18 +9,22 @@
 #include <QEvent>
 #include <QQueue>
 #include <QTimer>
+
 class XWin_Ui;
+
 class Client;
+
 class MainWindow;
+
 class TcpTool;
 
 class RDPThread : public QThread {
 Q_OBJECT
 private:
-    Client * client;
+    Client *client;
     QQueue<QEvent *> events;
-    TcpTool * tcptool;
-    XWin_Ui * xwin_ui;
+    TcpTool *tcptool;
+    XWin_Ui *xwin_ui;
     bool willclose;
     int width, height, bpp;
 public:
@@ -30,14 +34,18 @@ public:
 
     void push_event(QEvent *);
 
-    Client * getClient();
+    Client *getClient();
 
     void setClose();
 
     ~RDPThread() override;
+
 private slots:
+
     void dispatch_message();
+
 signals:
+
     void paint();
 };
 
