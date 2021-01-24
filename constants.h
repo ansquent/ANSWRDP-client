@@ -41,23 +41,23 @@ typedef signed int sint32;
 
 typedef QImage *HRDPBITMAP;
 typedef QImage *HGLYPH;
-typedef void *HCOLOURMAP;
+typedef void *HCOLORMAP;
 typedef void *HRDPCURSOR;
 
-typedef struct _COLOURENTRY {
+typedef struct _COLORENTRY {
     uint8 red;
     uint8 green;
     uint8 blue;
 
 }
-        COLOURENTRY;
+        COLORENTRY;
 
-typedef struct _COLOURMAP {
-    uint16 ncolours;
-    COLOURENTRY *colours;
+typedef struct _COLORMAP {
+    uint16 ncolors;
+    COLORENTRY *colors;
 
 }
-        COLOURMAP;
+        COLORMAP;
 
 typedef struct _BOUNDS {
     uint16 left;
@@ -71,7 +71,7 @@ typedef struct _BOUNDS {
 typedef struct _PEN {
     uint8 style;
     uint8 width;
-    uint8 colour;
+    uint8 color;
 
 }
         PEN;
@@ -771,8 +771,8 @@ typedef struct _PATBLT_ORDER {
     uint16 cx;
     uint16 cy;
     uint8 opcode;
-    uint8 bgcolour;
-    uint8 fgcolour;
+    uint8 bgcolor;
+    uint8 fgcolor;
     BRUSH brush;
 
 }
@@ -796,7 +796,7 @@ typedef struct _LINE_ORDER {
     uint16 starty;
     uint16 endx;
     uint16 endy;
-    uint8 bgcolour;
+    uint8 bgcolor;
     uint8 opcode;
     PEN pen;
 
@@ -808,7 +808,7 @@ typedef struct _RECT_ORDER {
     uint16 y;
     uint16 cx;
     uint16 cy;
-    uint8 colour;
+    uint8 color;
 
 }
         RECT_ORDER;
@@ -825,7 +825,7 @@ typedef struct _DESKSAVE_ORDER {
         DESKSAVE_ORDER;
 
 typedef struct _TRIBLT_ORDER {
-    uint8 colour_table;
+    uint8 color_table;
     uint8 cache_id;
     uint16 x;
     uint16 y;
@@ -834,8 +834,8 @@ typedef struct _TRIBLT_ORDER {
     uint8 opcode;
     uint16 srcx;
     uint16 srcy;
-    uint8 bgcolour;
-    uint8 fgcolour;
+    uint8 bgcolor;
+    uint8 fgcolor;
     BRUSH brush;
     uint16 cache_idx;
     uint16 unknown;
@@ -844,7 +844,7 @@ typedef struct _TRIBLT_ORDER {
         TRIBLT_ORDER;
 
 typedef struct _MEMBLT_ORDER {
-    uint8 colour_table;
+    uint8 color_table;
     uint8 cache_id;
     uint16 x;
     uint16 y;
@@ -864,7 +864,7 @@ typedef struct _POLYLINE_ORDER {
     uint16 x;
     uint16 y;
     uint8 opcode;
-    uint8 fgcolour;
+    uint8 fgcolor;
     uint8 lines;
     uint8 datasize;
     uint8 data[MAX_DATA];
@@ -879,8 +879,8 @@ typedef struct _TEXT2_ORDER {
     uint8 flags;
     uint8 mixmode;
     uint8 unknown;
-    uint8 fgcolour;
-    uint8 bgcolour;
+    uint8 fgcolor;
+    uint8 bgcolor;
     uint16 clipleft;
     uint16 cliptop;
     uint16 clipright;
@@ -970,7 +970,7 @@ typedef struct _RDP_FONTCACHE_ORDER {
 
 typedef struct _RDP_COLCACHE_ORDER {
     uint8 cache_id;
-    COLOURMAP map;
+    COLORMAP map;
 
 }
         RDP_COLCACHE_ORDER;

@@ -13,7 +13,7 @@
 #include <QRgb>
 #include <algorithm>
 #include <QBitmap>
-#include <third_party/openssl/rc4.h>
+#include "third_party/openssl/include/rc4.h"
 #include "constants.h"
 
 class XWin_Ui;
@@ -173,7 +173,7 @@ private:
 
     static void rdp_in_coord(STREAM s, uint16 *coord, BOOL delta);
 
-    static void rdp_in_colour(STREAM s, uint8 *colour);
+    static void rdp_in_color(STREAM s, uint8 *color);
 
     static BOOL rdp_parse_bounds(STREAM s, BOUNDS *bounds);
 

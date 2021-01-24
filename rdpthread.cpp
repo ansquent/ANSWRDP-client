@@ -24,7 +24,7 @@ RDPThread::RDPThread(int width, int height, int bpp) {
 void RDPThread::run() {
     tcptool = new TcpTool();
     xwin_ui = new XWin_Ui(width, height, bpp);
-    char server[256] = "192.168.93.129";
+    char server[256] = "192.168.199.129";
     char username[256] = "Administrator";
     client = new Client(xwin_ui, tcptool, server, username);
     uint32 flags = RDP_LOGON_NORMAL | RDP_LOGON_AUTO;

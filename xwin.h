@@ -79,7 +79,7 @@ private:
 
     void DO_GLYPH(uint8 &font, unsigned char *ttext, int &idx,
                   unsigned char &flags, int &xyoffset,
-                  int &x, int &y, int &mixmode, int &bgcolour, int &fgcolour);
+                  int &x, int &y, int &mixmode, int &bgcolor, int &fgcolor);
 
 public:
     XWin_Ui(int, int, int);
@@ -109,7 +109,7 @@ public:
 
     void ui_destroy_cursor(HRDPCURSOR cursor);
 
-    void ui_create_colourmap(COLOURMAP *colours);
+    void ui_create_colormap(COLORMAP *colors);
 
     void ui_set_clip(int x, int y, int cx, int cy);
 
@@ -119,24 +119,24 @@ public:
 
     void ui_destblt(uint8 opcode, int x, int y, int cx, int cy);
 
-    void ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH *brush, int fgcolour);
+    void ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH *brush, int fgcolor);
 
     void ui_screenblt(uint8 opcode, int x, int y, int cx, int cy, int srcx, int srcy);
 
     void ui_memblt(uint8 opcode, int x, int y, int cx, int cy, HRDPBITMAP src, int srcx, int srcy);
 
     void ui_triblt(uint8 opcode, int x, int y, int cx, int cy, HRDPBITMAP src, int srcx, int srcy,
-                   BRUSH *brush, int bgcolour, int fgcolour);
+                   BRUSH *brush, int bgcolor, int fgcolor);
 
     void ui_line(uint8 opcode, int startx, int starty, int endx, int endy, PEN *pen);
 
-    void ui_rect(int x, int y, int cx, int cy, int colour);
+    void ui_rect(int x, int y, int cx, int cy, int color);
 
     void draw_glyph(int x, int y, QImage *glyphImage, int fgcolor);
 
     void ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y, int clipx, int clipy,
-                      int clipcx, int clipcy, int boxx, int boxy, int boxcx, int boxcy, int bgcolour,
-                      int fgcolour, uint8 *text, uint8 length);
+                      int clipcx, int clipcy, int boxx, int boxy, int boxcx, int boxcy, int bgcolor,
+                      int fgcolor, uint8 *text, uint8 length);
 
     void ui_desktop_save(uint32 offset, int x, int y, int cx, int cy);
 

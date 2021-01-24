@@ -396,7 +396,7 @@ void Client::rdp_out_pointer_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_POINTER);
     out_uint16_le(s, RDP_CAPLEN_POINTER);
 
-    out_uint16(s, 0);    /* Colour pointer */
+    out_uint16(s, 0);    /* Color pointer */
     out_uint16_le(s, 20);    /* Cache size */
 }
 
@@ -409,7 +409,7 @@ void Client::rdp_out_share_caps(STREAM s) {
     out_uint16(s, 0);    /* pad */
 }
 
-/* Output colour cache capability set */
+/* Output color cache capability set */
 void Client::rdp_out_colcache_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_COLCACHE);
     out_uint16_le(s, RDP_CAPLEN_COLCACHE);
@@ -572,27 +572,27 @@ void Client::process_bitmap_updates(STREAM s) {
 
 /* Process a palette update */
 void Client::process_palette(STREAM s) {
-    COLOURENTRY *entry;
-    COLOURMAP map;
-    HCOLOURMAP hmap;
+    COLORENTRY *entry;
+    COLORMAP map;
+    HCOLORMAP hmap;
     int i;
 
     in_uint8s(s, 2);    /* pad */
-    in_uint16_le(s, map.ncolours);
+    in_uint16_le(s, map.ncolors);
     in_uint8s(s, 2);    /* pad */
 
-    map.colours = new COLOURENTRY[3 * map.ncolours];
+    map.colors = new COLORENTRY[3 * map.ncolors];
 
-    for (i = 0; i < map.ncolours; i++) {
-        entry = &map.colours[i];
+    for (i = 0; i < map.ncolors; i++) {
+        entry = &map.colors[i];
         in_uint8(s, entry->red);
         in_uint8(s, entry->green);
         in_uint8(s, entry->blue);
     }
 
-    xwin_ui->ui_create_colourmap(&map);
+    xwin_ui->ui_create_colormap(&map);
 
-    delete[]map.colours;
+    delete[]map.colors;
 }
 
 /* Process an update PDU */
@@ -988,8 +988,8 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
     unsigned char *end = input + size;
     unsigned char *prevline = nullptr, *line = nullptr;
     int opcode, count, offset, isfillormix, x = width;
-    int lastopcode = -1, insertmix = false, bicolour = false;
-    uint8 code, colour1 = 0, colour2 = 0;
+    int lastopcode = -1, insertmix = false, bicolor = false;
+    uint8 code, color1 = 0, color2 = 0;
     uint8 mixmask, mask = 0, mix = 0xff;
     int fom_mask = 0;
 
@@ -1046,10 +1046,10 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                 if ((lastopcode == opcode) && !((x == width) && (prevline == nullptr)))
                     insertmix = true;
                 break;
-            case 8:    /* Bicolour */
-                colour1 = CVAL(input);
-            case 3:    /* Colour */
-                colour2 = CVAL(input);
+            case 8:    /* Bicolor */
+                color1 = CVAL(input);
+            case 3:    /* Color */
+                color2 = CVAL(input);
                 break;
             case 6:    /* SetMix/Mix */
             case 7:    /* SetMix/FillOrMix */
@@ -1129,21 +1129,21 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
                     }
                     break;
 
-                case 3:    /* Colour */
-                REPEAT(line[x] = colour2);
+                case 3:    /* Color */
+                REPEAT(line[x] = color2);
                     break;
 
                 case 4:    /* Copy */
                 REPEAT(line[x] = CVAL(input));
                     break;
 
-                case 8:    /* Bicolour */
-                REPEAT(if (bicolour) {
-                    line[x] = colour2;
-                    bicolour = false;
+                case 8:    /* Bicolor */
+                REPEAT(if (bicolor) {
+                    line[x] = color2;
+                    bicolor = false;
                 } else {
-                    line[x] = colour1;
-                    bicolour = true;
+                    line[x] = color1;
+                    bicolor = true;
                     count++;
                 }
                 );
@@ -1527,9 +1527,9 @@ void Client::rdp_in_coord(STREAM s, uint16 *coord, BOOL delta) {
     }
 }
 
-/* Read a colour entry */
-void Client::rdp_in_colour(STREAM s, uint8 *colour) {
-    in_uint8(s, *colour);
+/* Read a color entry */
+void Client::rdp_in_color(STREAM s, uint8 *color) {
+    in_uint8(s, *color);
     s->p += 2;
 }
 
@@ -1571,7 +1571,7 @@ BOOL Client::rdp_parse_pen(STREAM s, PEN *pen, uint32 present) {
         in_uint8(s, pen->width);
 
     if (present & 4)
-        rdp_in_colour(s, &pen->colour);
+        rdp_in_color(s, &pen->color);
 
     return s_check(s);
 }
@@ -1633,15 +1633,15 @@ void Client::process_patblt(STREAM s, PATBLT_ORDER *os, uint32 present, BOOL del
         in_uint8(s, os->opcode);
 
     if (present & 0x0020)
-        rdp_in_colour(s, &os->bgcolour);
+        rdp_in_color(s, &os->bgcolor);
 
     if (present & 0x0040)
-        rdp_in_colour(s, &os->fgcolour);
+        rdp_in_color(s, &os->fgcolor);
 
     rdp_parse_brush(s, &os->brush, present >> 7);
 
     xwin_ui->ui_patblt(ROP2_P(os->opcode), os->x, os->y, os->cx, os->cy,
-                       &os->brush, os->fgcolour);
+                       &os->brush, os->fgcolor);
 }
 
 /* Process a screen blt order */
@@ -1687,7 +1687,7 @@ void Client::process_line(STREAM s, LINE_ORDER *os, uint32 present, BOOL delta) 
         rdp_in_coord(s, &os->endy, delta);
 
     if (present & 0x0020)
-        rdp_in_colour(s, &os->bgcolour);
+        rdp_in_color(s, &os->bgcolor);
 
     if (present & 0x0040)
         in_uint8(s, os->opcode);
@@ -1717,9 +1717,9 @@ void Client::process_rect(STREAM s, RECT_ORDER *os, uint32 present, BOOL delta) 
         rdp_in_coord(s, &os->cy, delta);
 
     if (present & 0x10)
-        in_uint8(s, os->colour);
+        in_uint8(s, os->color);
 
-    xwin_ui->ui_rect(os->x, os->y, os->cx, os->cy, os->colour);
+    xwin_ui->ui_rect(os->x, os->y, os->cx, os->cy, os->color);
 }
 
 /* Process a desktop save order */
@@ -1758,7 +1758,7 @@ void Client::process_memblt(STREAM s, MEMBLT_ORDER *os, uint32 present, BOOL del
 
     if (present & 0x0001) {
         in_uint8(s, os->cache_id);
-        in_uint8(s, os->colour_table);
+        in_uint8(s, os->color_table);
     }
 
     if (present & 0x0002)
@@ -1797,7 +1797,7 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
 
     if (present & 0x000001) {
         in_uint8(s, os->cache_id);
-        in_uint8(s, os->colour_table);
+        in_uint8(s, os->color_table);
     }
 
     if (present & 0x000002)
@@ -1822,10 +1822,10 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
         rdp_in_coord(s, &os->srcy, delta);
 
     if (present & 0x000100)
-        rdp_in_colour(s, &os->bgcolour);
+        rdp_in_color(s, &os->bgcolor);
 
     if (present & 0x000200)
-        rdp_in_colour(s, &os->fgcolour);
+        rdp_in_color(s, &os->fgcolor);
 
     rdp_parse_brush(s, &os->brush, present >> 10);
 
@@ -1838,7 +1838,7 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
         return;
 
     xwin_ui->ui_triblt(os->opcode, os->x, os->y, os->cx, os->cy,
-                       bitmap, os->srcx, os->srcy, &os->brush, os->bgcolour, os->fgcolour);
+                       bitmap, os->srcx, os->srcy, &os->brush, os->bgcolor, os->fgcolor);
 }
 
 /* Parse a delta co-ordinate in polyline order form */
@@ -1875,7 +1875,7 @@ void Client::process_polyline(STREAM s, POLYLINE_ORDER *os, uint32 present, BOOL
         in_uint8(s, os->opcode);
 
     if (present & 0x10)
-        rdp_in_colour(s, &os->fgcolour);
+        rdp_in_color(s, &os->fgcolor);
 
     if (present & 0x20)
         in_uint8(s, os->lines);
@@ -1893,7 +1893,7 @@ void Client::process_polyline(STREAM s, POLYLINE_ORDER *os, uint32 present, BOOL
     x = os->x;
     y = os->y;
     pen.style = pen.width = 0;
-    pen.colour = os->fgcolour;
+    pen.color = os->fgcolor;
 
     index = 0;
     data = ((os->lines - 1) / 4) + 1;
@@ -1936,10 +1936,10 @@ void Client::process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta
         in_uint8(s, os->mixmode);
 
     if (present & 0x000010)
-        rdp_in_colour(s, &os->fgcolour);
+        rdp_in_color(s, &os->fgcolor);
 
     if (present & 0x000020)
-        rdp_in_colour(s, &os->bgcolour);
+        rdp_in_color(s, &os->bgcolor);
 
     if (present & 0x000040) in_uint16_le(s, os->clipleft);
 
@@ -1972,7 +1972,7 @@ void Client::process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta
                           os->clipbottom - os->cliptop,
                           os->boxleft, os->boxtop,
                           os->boxright - os->boxleft,
-                          os->boxbottom - os->boxtop, os->bgcolour, os->fgcolour, os->text, os->length);
+                          os->boxbottom - os->boxtop, os->bgcolor, os->fgcolor, os->text, os->length);
 }
 
 /* Process a raw bitmap cache order */
@@ -2031,30 +2031,30 @@ void Client::process_bmpcache(STREAM s) {
     delete[]bmpdata;
 }
 
-/* Process a colourmap cache order */
+/* Process a colormap cache order */
 void Client::process_colcache(STREAM s) {
-    COLOURENTRY *entry;
-    COLOURMAP map;
-    HCOLOURMAP hmap;
+    COLORENTRY *entry;
+    COLORMAP map;
+    HCOLORMAP hmap;
     uint8 cache_id;
     int i;
 
     in_uint8(s, cache_id);
-    in_uint16_le(s, map.ncolours);
+    in_uint16_le(s, map.ncolors);
 
-    map.colours = new COLOURENTRY[3 * map.ncolours];
+    map.colors = new COLORENTRY[3 * map.ncolors];
 
-    for (i = 0; i < map.ncolours; i++) {
-        entry = &map.colours[i];
+    for (i = 0; i < map.ncolors; i++) {
+        entry = &map.colors[i];
         in_uint8(s, entry->blue);
         in_uint8(s, entry->green);
         in_uint8(s, entry->red);
         in_uint8s(s, 1);    /* pad */
     }
 
-    xwin_ui->ui_create_colourmap(&map);
+    xwin_ui->ui_create_colormap(&map);
 
-    delete[]map.colours;
+    delete[]map.colors;
 }
 
 /* Process a font cache order */
