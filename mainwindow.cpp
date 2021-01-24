@@ -8,12 +8,13 @@
 
 void info(const char *format, ...);
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget *parent, QString hostname, QString username, QString password)
         : QMainWindow(parent) {
+    this->setWindowTitle("Main - Rdesktop");
     setGeometry(QRect(0, 0, 1200, 800));
     panel = new QLabel(this);
     panel->setGeometry(0, 0, 1200, 800);
-    rdpThread = new RDPThread(1200, 800, 32);
+    rdpThread = new RDPThread(1200, 800, 32, hostname, username, password);
     rdpThread->start();
     connect(rdpThread, SIGNAL(paint()), this, SLOT(paint()));
     setAttribute(Qt::WA_Hover, true);

@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    startui.cpp \
     tcp.cpp \
     xwin.cpp \
     debug.cpp \
@@ -29,6 +30,7 @@ HEADERS += \
     mainwindow.h \
     client.h \
     rdpthread.h \
+    startui.h \
     tcp.h \
     xwin.h
 
@@ -40,3 +42,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 unix:!macx: LIBS += -lcrypto
 unix:!macx: LIBS += -lssl
 CONFIG += console
+
+FORMS += \
+    startui.ui

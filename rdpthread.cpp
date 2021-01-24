@@ -8,10 +8,13 @@
 #include "tcp.h"
 #include <QQueue>
 #include <QMouseEvent>
+#include <QString>
+#include <QMessageBox>
 
 void info(const char *format, ...);
 
-RDPThread::RDPThread(int width, int height, int bpp) {
+RDPThread::RDPThread(int width, int height, int bpp,
+                     QString hostname, QString username, QString password) {
     this->width = width;
     this->height = height;
     this->bpp = bpp;
@@ -19,17 +22,17 @@ RDPThread::RDPThread(int width, int height, int bpp) {
     willclose = false;
     tcptool = nullptr;
     xwin_ui = nullptr;
+    strcpy(this->server, hostname.toStdString().c_str());
+    strcpy(this->username, username.toStdString().c_str());
+    strcpy(this->password, password.toStdString().c_str());
 }
 
 void RDPThread::run() {
     tcptool = new TcpTool();
     xwin_ui = new XWin_Ui(width, height, bpp);
-    char server[256] = "192.168.199.129";
-    char username[256] = "Administrator";
     client = new Client(xwin_ui, tcptool, server, username);
     uint32 flags = RDP_LOGON_NORMAL | RDP_LOGON_AUTO;
     char domain[256] = {0};
-    char password[256] = "123456";
     char shell[256] = {0};
     char directory[256] = {0};
     if (!client->rdp_connect(server, flags, domain, password, shell, directory)) {

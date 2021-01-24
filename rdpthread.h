@@ -27,8 +27,12 @@ private:
     XWin_Ui *xwin_ui;
     bool willclose;
     int width, height, bpp;
+    char server[256] = {0};
+    char username[256] = {0};
+    char password[256] = {0};
 public:
-    explicit RDPThread(int width, int height, int bpp);
+    explicit RDPThread(int width, int height, int bpp,
+                       QString hostname, QString username, QString password);
 
     void run() override;
 
