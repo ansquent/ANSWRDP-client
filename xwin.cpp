@@ -117,7 +117,7 @@ XWin_Ui::ui_paint_bitmap(int x, int y, int cx, int cy, int width, int height, ui
         memcpy(image->scanLine(i), &tdata[i * width * bpp / 8], width * bpp / 8);
     }
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     QRect srcRect(0, 0, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, *image, srcRect);
     delete image;
@@ -221,7 +221,7 @@ XWin_Ui::ui_destblt(uint8 opcode,
     info("ui_destblt");
 	info("opcode=%d x=%d y=%d cx=%d cy=%d", opcode, x, y, cx, cy);
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QBrush brush;
     brush.setStyle(Qt::BrushStyle::SolidPattern);
@@ -235,7 +235,7 @@ XWin_Ui::ui_patblt(uint8 opcode, int x, int y, int cx, int cy, BRUSH *brush, int
     info("opcode=%d x=%d y=%d cx=%d cy=%d, fgcolor=%d", opcode, x, y, cx, cy, fgcolor);
     uint8 ipattern[8];
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QBrush realBrush;
     QPen pen;
@@ -270,7 +270,7 @@ XWin_Ui::ui_screenblt(uint8 opcode,
 	info("x=%d y=%d cx=%d cy=%d srcx=%d srcy=%d", x, y, cx, cy, srcx, srcy);
     QImage src = pixmap->toImage();
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, src, srcRect);
@@ -284,7 +284,7 @@ XWin_Ui::ui_memblt(uint8 opcode,
     info("ui_memblt");
 	info("opcode=%d x=%d y=%d cx=%d cy=%d srcx=%d srcy=%d", opcode, x, y, cx, cy, srcx, srcy);
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QRect srcRect(srcx, srcy, cx, cy), destRect(x, y, cx, cy);
     painter->drawImage(destRect, *src, srcRect);
@@ -330,7 +330,7 @@ XWin_Ui::ui_line(uint8 opcode,
     info("ui_line");
 	info("opcode=%d startx=%d starty=%d endx=%d endy=%d", opcode, startx, starty, endx, endy);
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     painter->setCompositionMode(rop2_map[opcode]);
     QPen mypen;
     mypen.setColor(colmap[pen->color]);
@@ -346,7 +346,7 @@ XWin_Ui::ui_rect(
     info("ui_rect");
     info("x=%d y=%d cx=%d cy=%d color=%d", x, y, cx, cy, color);
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     QBrush brush;
     brush.setColor(colmap[color]);
     brush.setStyle(Qt::BrushStyle::SolidPattern);
@@ -419,7 +419,7 @@ XWin_Ui::ui_draw_text(uint8 font, uint8 flags, int mixmode, int x, int y,
     DATABLOB *entry;
 
     QPainter *painter = new QPainter(pixmap);
-    painter->setClipRect(clipx, clipy, clipcx, clipcy);
+    painter->setClipRect(this->clipx, this->clipy, this->clipcx, this->clipcy);
     QBrush realBrush;
     realBrush.setStyle(Qt::BrushStyle::SolidPattern);
     realBrush.setColor(colmap[bgcolor]);
@@ -654,7 +654,7 @@ void XWin_Ui::cache_put_desktop(uint32 offset, int cx, int cy, int scanline, int
 /* Retrieve cursor from cache */
 HRDPCURSOR XWin_Ui::cache_get_cursor(uint16 cache_idx) {
     info("cache_get_cursor");
-    printf("cache_idx=%d", cache_idx);
+    info("cache_idx=%d", cache_idx);
     HRDPCURSOR cursor;
 
     if (cache_idx < NUM_ELEMENTS(cursorcache)) {
@@ -670,7 +670,7 @@ HRDPCURSOR XWin_Ui::cache_get_cursor(uint16 cache_idx) {
 /* Store cursor in cache */
 void XWin_Ui::cache_put_cursor(uint16 cache_idx, HRDPCURSOR cursor) {
     info("cache_get_cursor");
-    printf("cache_idx=%d", cache_idx);
+    info("cache_idx=%d", cache_idx);
 
     if (cache_idx < NUM_ELEMENTS(cursorcache)) {
         if (cursorcache[cache_idx] != nullptr) {
