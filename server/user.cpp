@@ -1,15 +1,72 @@
 #include "user.h"
-#include "database.h"
 #include <QString>
 #include <Windows.h>
 #include <lm.h>
-#include <QDebug>
 #include "util.h"
+#include <QCoreApplication>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QDir>
 
-User::User():token(nullptr){}
+#ifdef _WIN32
+#ifndef _WIN64
+#pragma comment(lib,"../server/third_party/win32/lib/x86/NetAPI32.Lib")
+#pragma comment(lib,"../server/third_party/win32/lib/x86/UserEnv.Lib")
+#pragma comment(lib,"../server/third_party/win32/lib/x86/AdvAPI32.Lib")
+#else
+#pragma comment(lib,"../server/third_party/win32/lib/x64/NetAPI32.Lib")
+#pragma comment(lib,"../server/third_party/win32/lib/x64/UserEnv.Lib")
+#pragma comment(lib,"../server/third_party/win32/lib/x64/AdvAPI32.Lib")
+#endif
+#endif
+
+User::User(QString ip):token(nullptr){
+    //QCoreApplication::addLibraryPath("C:\\Qt\\Qt5.13.2\\5.13.2\\mingw73_32\\plugins");
+    sqldb = QSqlDatabase::addDatabase("QSQLITE");
+    sqldb.setHostName(ip);
+    QString filename = QDir::currentPath() +QString("/")+ QString("user.db");
+    sqldb.setDatabaseName(filename);
+    if(!sqldb.open()){
+        info("Unable to open database: %s", sqldb.lastError().text().toStdString().c_str());
+        exit(-1);
+    }else{
+        info("Database connection established");
+    }
+
+    query = QSqlQuery(sqldb);
+
+    bool hasUserTable = false;
+    QStringList tables = sqldb.tables();
+    QStringListIterator itr(tables);
+
+    while (itr.hasNext()){
+        QString name = itr.next();
+        info("name: %s", name.toStdString().c_str());
+        if (name == "user"){
+            hasUserTable = true;
+            break;
+        }
+    }
+    if (!hasUserTable){
+        if(!query.exec("create table user(id int primary key,"
+                       "win32username text, "
+                       "win32password text, "
+                       "username text, "
+                       "password text);"))
+        {
+            info("Error: Fail to create table. %s", query.lastError().text().toStdString().c_str());
+            exit(-1);
+        }
+
+        else
+        {
+            info("Table created!");
+        }
+    }
+}
 
 bool User::login(QString username, QString password){
-    if (Database::getDatabase()->queryUser(username, password, this->win32username, this->win32password)){
+    if (queryUser(username, password, this->win32username, this->win32password)){
         this->username = username;
         this->password = password;
 
@@ -19,7 +76,7 @@ bool User::login(QString username, QString password){
         this->win32password.toWCharArray(win32password);
         if (!LogonUserW(win32username, nullptr, win32password, LOGON32_LOGON_BATCH,
                        LOGON32_PROVIDER_DEFAULT, &token)){
-            qDebug() << "LogonUser Failed!";
+            info("LogonUser Failed!");
             return false;
         }
         return true;
@@ -28,8 +85,8 @@ bool User::login(QString username, QString password){
 }
 
 bool User::reg(QString username, QString password){
-    if (!Database::getDatabase()->createUser(username, password, this->win32username, this->win32password)){
-        qDebug() << "Failed Create User in Database!";
+    if (!createUser(username, password, this->win32username, this->win32password)){
+        info("Failed Create User in Database!");
         return false;
     }
     this->username = username;
@@ -52,8 +109,8 @@ bool User::reg(QString username, QString password){
     NET_API_STATUS re = NetUserAdd(nullptr, 1, (LPBYTE)&new_user, nullptr);
 
     while (re == NERR_UserExists || re == NERR_PasswordTooShort || re == NERR_PasswordTooRecent){
-        Database::getDatabase()->deleteUser(username, password);
-        Database::getDatabase()->createUser(username, password, this->win32username, this->win32password);
+        deleteUser(username, password);
+        createUser(username, password, this->win32username, this->win32password);
         this->win32username.toWCharArray(win32username);
         this->win32password.toWCharArray(win32password);
         new_user.usri1_name = win32username; // Allocates the username
@@ -62,11 +119,10 @@ bool User::reg(QString username, QString password){
     }
 
     if(re == NERR_Success){
-        qDebug() << "Succeeded Create Net User!";
+        info("Succeeded Create Net User!");
     }
     else{
-        qDebug() << "Failed Create Net User!";
-        qDebug() << re;
+        info("Failed Create Net User! %d", re);
         return false;
     }    
 
@@ -75,11 +131,10 @@ bool User::reg(QString username, QString password){
 
     re = NetLocalGroupAddMembers(nullptr, L"Administrators", 3, (LPBYTE)&account, 1);
     if (re == NERR_Success || re == ERROR_MEMBER_IN_ALIAS) {
-       qDebug() << "Succeeded Add to local Group!";
+       info("Succeeded Add to local Group!");
     }
     else {
-        qDebug() << "Failed Add to local Group!";
-        qDebug() << re;
+        info("Failed Add to local Group! %d\n", re);
         return false;
     }
 
@@ -93,18 +148,74 @@ bool User::runProgram(QString programName){
     PROCESS_INFORMATION pi;
     si.dwFlags = STARTF_USESHOWWINDOW;
     si.wShowWindow = TRUE;
-    qDebug() << "token" << token;
+    info("token: %d", token);
     BOOL bRet = CreateProcessAsUserW(token, nullptr, win32ProgramName,
                          nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE,
                          nullptr, nullptr, &si, &pi);
     DWORD err = GetLastError();
     if (!bRet){
-        qDebug() << "err" << err;
-        qDebug() << "CreateProcessAsUser Failed!";
+        info("err: %d CreateProcessAsUser Failed!", err);
         return false;
     }
     else {
-        qDebug() << "CreateProcessAsUser Succeeded!";
+        info("CreateProcessAsUser Succeeded!");
         return true;
     }
+}
+
+bool User::createUser(QString username, QString password, QString & win32username, QString & win32password){
+    if (!checkUser(username, password)){
+        win32username = getRandomLetters(20);
+        win32password = getRandomLetterNums(20);
+        info("win32username %s", win32username.toStdString().c_str());
+        info("win32password %s", win32password.toStdString().c_str());
+        QString execQueryStr = QString("INSERT INTO user(win32username, win32password,"
+                                            "username, password) VALUES(\"%1\", \"%2\", \"%3\", \"%4\");")
+                                            .arg(win32username)
+                                            .arg(win32password)
+                                            .arg(username)
+                                            .arg(password);
+        if(!query.exec(execQueryStr))
+        {
+            info("Query error: %d", query.lastError().text().toStdString().c_str());
+            exit(-1);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool User::checkUser(QString username, QString password){
+    QString execQueryStr = QString("select * from user where username=\"%1\" and password=\"%2\"").arg(username).arg(password);
+    if(!query.exec(execQueryStr))
+    {
+        info("Query error: %d", query.lastError().text().toStdString().c_str());
+        exit(-1);
+    }
+    return query.next();
+}
+
+bool User::queryUser(QString username, QString password, QString & win32username, QString & win32password){
+    if (checkUser(username, password)){
+        win32username = query.value(1).toString();
+        win32password = query.value(2).toString();
+        return true;
+    }
+    return false;
+}
+
+bool User::deleteUser(QString username, QString password){
+    if (checkUser(username, password)){
+        QString execQueryStr = QString("DELETE FROM user where username=\"%1\""
+                                            "and password=\"%2\";")
+                                            .arg(username)
+                                            .arg(password);
+        if(!query.exec(execQueryStr))
+        {
+            info("Query error: %d", query.lastError().text().toStdString().c_str());
+            exit(-1);
+        }
+        return true;
+    }
+    return false;
 }

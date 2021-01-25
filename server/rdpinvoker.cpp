@@ -1,28 +1,26 @@
 #include "mainwindow.h"
 #include <QPaintEvent>
-#include "constants.h"
-#include "xwin.h"
-#include "client.h"
-#include "tcp.h"
+#include "util.h"
+#include "rdpxwin.h"
+#include "rdpinvoker.h"
+#include "rdptcp.h"
 #include "third_party/openssl/include/rc4.h"
 #include "third_party/openssl/include/md5.h"
 #include "third_party/openssl/include/sha.h"
 #include "third_party/openssl/include/bn.h"
 #include "third_party/x11/keysymdef.h"
 
-void info(const char *format, ...);
-
 #ifdef _WIN32
 #ifndef _WIN64
-#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libcrypto32MT.lib")
-#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libssl32MT.lib")
+#pragma comment(lib,"../server/third_party/openssl/lib/libcrypto32MT.lib")
+#pragma comment(lib,"../server/third_party/openssl/lib/libssl32MT.lib")
 #else
-#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libcrypto64MT.lib")
-#pragma comment(lib,"../rdesktop-wrap/third_party/openssl/lib/libssl64MT.lib")
+#pragma comment(lib,"../server/third_party/openssl/lib/libcrypto64MT.lib")
+#pragma comment(lib,"../server/third_party/openssl/lib/libssl64MT.lib")
 #endif
 #endif
 
-Client::Client(XWin_Ui *ui, TcpTool *tool, char *hostname, char *username) : canned_caps{
+RDPInvoker::RDPInvoker(RDPXWin *ui, RDPTcpTool *tool, char *hostname, char *username) : canned_caps{
         0x01, 0x00, 0x00, 0x00, 0x09, 0x04, 0x00, 0x00, 0x04,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00,
@@ -62,7 +60,7 @@ Client::Client(XWin_Ui *ui, TcpTool *tool, char *hostname, char *username) : can
     min_keycode = 8;
 }
 
-void Client::rdp_main_loop() {
+void RDPInvoker::rdp_main_loop() {
     uint8 type;
     STREAM s;
 
@@ -88,7 +86,7 @@ void Client::rdp_main_loop() {
     }
 }
 
-STREAM Client::rdp_recv(uint8 *type) {
+STREAM RDPInvoker::rdp_recv(uint8 *type) {
     static STREAM rdp_s;
     uint16 length, pdu_type;
 
@@ -122,7 +120,7 @@ STREAM Client::rdp_recv(uint8 *type) {
 }
 
 /* Initialise an RDP packet */
-STREAM Client::rdp_init(int maxlen) {
+STREAM RDPInvoker::rdp_init(int maxlen) {
     STREAM s;
 
     s = sec_init(encryption ? SEC_ENCRYPT : 0, maxlen + 6);
@@ -132,7 +130,7 @@ STREAM Client::rdp_init(int maxlen) {
 }
 
 /* Send an RDP packet */
-void Client::rdp_send(STREAM s, uint8 pdu_type) {
+void RDPInvoker::rdp_send(STREAM s, uint8 pdu_type) {
     uint16 length;
 
     s_pop_layer(s, rdp_hdr);
@@ -146,7 +144,7 @@ void Client::rdp_send(STREAM s, uint8 pdu_type) {
 }
 
 /* Initialise an RDP data packet */
-STREAM Client::rdp_init_data(int maxlen) {
+STREAM RDPInvoker::rdp_init_data(int maxlen) {
     STREAM s;
 
     s = sec_init(encryption ? SEC_ENCRYPT : 0, maxlen + 18);
@@ -156,7 +154,7 @@ STREAM Client::rdp_init_data(int maxlen) {
 }
 
 /* Send an RDP data packet */
-void Client::rdp_send_data(STREAM s, uint8 data_pdu_type) {
+void RDPInvoker::rdp_send_data(STREAM s, uint8 data_pdu_type) {
     uint16 length;
 
     s_pop_layer(s, rdp_hdr);
@@ -178,7 +176,7 @@ void Client::rdp_send_data(STREAM s, uint8 data_pdu_type) {
 }
 
 /* Output a string in Unicode */
-void Client::rdp_out_unistr(STREAM s, const char *string, int len) {
+void RDPInvoker::rdp_out_unistr(STREAM s, const char *string, int len) {
     int i = 0, j = 0;
 
     len += 2;
@@ -192,7 +190,7 @@ void Client::rdp_out_unistr(STREAM s, const char *string, int len) {
 }
 
 /* Parse a logon info packet */
-void Client::rdp_send_logon_info(uint32 flags, char *domain, char *user,
+void RDPInvoker::rdp_send_logon_info(uint32 flags, char *domain, char *user,
                                  char *password, char *program, char *directory) {
     int len_domain = 2 * strlen(domain);
     int len_user = 2 * strlen(user);
@@ -223,7 +221,7 @@ void Client::rdp_send_logon_info(uint32 flags, char *domain, char *user,
 }
 
 /* Send a control PDU */
-void Client::rdp_send_control(uint16 action) {
+void RDPInvoker::rdp_send_control(uint16 action) {
     STREAM s;
 
     s = rdp_init_data(8);
@@ -237,7 +235,7 @@ void Client::rdp_send_control(uint16 action) {
 }
 
 /* Send a synchronisation PDU */
-void Client::rdp_send_synchronise() {
+void RDPInvoker::rdp_send_synchronise() {
     STREAM s;
 
     s = rdp_init_data(4);
@@ -250,7 +248,7 @@ void Client::rdp_send_synchronise() {
 }
 
 /* Send a single input event */
-void Client::rdp_send_input(uint32 time, uint16 message_type, uint16 device_flags, uint16 param1, uint16 param2) {
+void RDPInvoker::rdp_send_input(uint32 time, uint16 message_type, uint16 device_flags, uint16 param1, uint16 param2) {
     STREAM s;
 
     s = rdp_init_data(16);
@@ -269,7 +267,7 @@ void Client::rdp_send_input(uint32 time, uint16 message_type, uint16 device_flag
 }
 
 /* Send an (empty) font information PDU */
-void Client::rdp_send_fonts(uint16 seq) {
+void RDPInvoker::rdp_send_fonts(uint16 seq) {
     STREAM s;
 
     s = rdp_init_data(8);
@@ -284,7 +282,7 @@ void Client::rdp_send_fonts(uint16 seq) {
 }
 
 /* Output general capability set */
-void Client::rdp_out_general_caps(STREAM s) {
+void RDPInvoker::rdp_out_general_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_GENERAL);
     out_uint16_le(s, RDP_CAPLEN_GENERAL);
 
@@ -301,7 +299,7 @@ void Client::rdp_out_general_caps(STREAM s) {
 }
 
 /* Output bitmap capability set */
-void Client::rdp_out_bitmap_caps(STREAM s) const {
+void RDPInvoker::rdp_out_bitmap_caps(STREAM s) const {
     out_uint16_le(s, RDP_CAPSET_BITMAP);
     out_uint16_le(s, RDP_CAPLEN_BITMAP);
 
@@ -320,7 +318,7 @@ void Client::rdp_out_bitmap_caps(STREAM s) const {
 }
 
 /* Output order capability set */
-void Client::rdp_out_order_caps(STREAM s) const {
+void RDPInvoker::rdp_out_order_caps(STREAM s) const {
     uint8 order_caps[32];
 
 
@@ -356,7 +354,7 @@ void Client::rdp_out_order_caps(STREAM s) const {
 }
 
 /* Output bitmap cache capability set */
-void Client::rdp_out_bmpcache_caps(STREAM s) {
+void RDPInvoker::rdp_out_bmpcache_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_BMPCACHE);
     out_uint16_le(s, RDP_CAPLEN_BMPCACHE);
 
@@ -370,7 +368,7 @@ void Client::rdp_out_bmpcache_caps(STREAM s) {
 }
 
 /* Output control capability set */
-void Client::rdp_out_control_caps(STREAM s) {
+void RDPInvoker::rdp_out_control_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_CONTROL);
     out_uint16_le(s, RDP_CAPLEN_CONTROL);
 
@@ -381,7 +379,7 @@ void Client::rdp_out_control_caps(STREAM s) {
 }
 
 /* Output activation capability set */
-void Client::rdp_out_activate_caps(STREAM s) {
+void RDPInvoker::rdp_out_activate_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_ACTIVATE);
     out_uint16_le(s, RDP_CAPLEN_ACTIVATE);
 
@@ -392,7 +390,7 @@ void Client::rdp_out_activate_caps(STREAM s) {
 }
 
 /* Output pointer capability set */
-void Client::rdp_out_pointer_caps(STREAM s) {
+void RDPInvoker::rdp_out_pointer_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_POINTER);
     out_uint16_le(s, RDP_CAPLEN_POINTER);
 
@@ -401,7 +399,7 @@ void Client::rdp_out_pointer_caps(STREAM s) {
 }
 
 /* Output share capability set */
-void Client::rdp_out_share_caps(STREAM s) {
+void RDPInvoker::rdp_out_share_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_SHARE);
     out_uint16_le(s, RDP_CAPLEN_SHARE);
 
@@ -410,7 +408,7 @@ void Client::rdp_out_share_caps(STREAM s) {
 }
 
 /* Output color cache capability set */
-void Client::rdp_out_colcache_caps(STREAM s) {
+void RDPInvoker::rdp_out_colcache_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_COLCACHE);
     out_uint16_le(s, RDP_CAPLEN_COLCACHE);
 
@@ -419,7 +417,7 @@ void Client::rdp_out_colcache_caps(STREAM s) {
 }
 
 /* Output unknown capability set */
-void Client::rdp_out_unknown_caps(STREAM s) {
+void RDPInvoker::rdp_out_unknown_caps(STREAM s) {
     out_uint16_le(s, RDP_CAPSET_UNKNOWN);
     out_uint16_le(s, 0x58);
 
@@ -427,7 +425,7 @@ void Client::rdp_out_unknown_caps(STREAM s) {
 }
 
 /* Send a confirm active PDU */
-void Client::rdp_send_confirm_active() {
+void RDPInvoker::rdp_send_confirm_active() {
     STREAM s;
     uint16 caplen =
             RDP_CAPLEN_GENERAL + RDP_CAPLEN_BITMAP + RDP_CAPLEN_ORDER +
@@ -462,7 +460,7 @@ void Client::rdp_send_confirm_active() {
 }
 
 /* Respond to a demand active PDU */
-void Client::process_demand_active(STREAM s) {
+void RDPInvoker::process_demand_active(STREAM s) {
     uint8 type;
 
     in_uint32_le(s, rdp_shareid);
@@ -482,7 +480,7 @@ void Client::process_demand_active(STREAM s) {
 }
 
 /* Process a pointer PDU */
-void Client::process_pointer_pdu(STREAM s) {
+void RDPInvoker::process_pointer_pdu(STREAM s) {
     uint16 message_type;
     uint16 x, y, width, height, cache_idx, masklen, datalen;
     uint8 *mask, *data;
@@ -507,7 +505,7 @@ void Client::process_pointer_pdu(STREAM s) {
             in_uint16_le(s, datalen);
             in_uint8p(s, data, datalen);
             in_uint8p(s, mask, masklen);
-            cursor = XWin_Ui::ui_create_cursor(x, y, width, height, mask, data);
+            cursor = RDPXWin::ui_create_cursor(x, y, width, height, mask, data);
             xwin_ui->ui_set_cursor(cursor);
             xwin_ui->cache_put_cursor(cache_idx, cursor);
             break;
@@ -522,7 +520,7 @@ void Client::process_pointer_pdu(STREAM s) {
 }
 
 /* Process bitmap updates */
-void Client::process_bitmap_updates(STREAM s) {
+void RDPInvoker::process_bitmap_updates(STREAM s) {
     uint16 num_updates;
     uint16 left, top, right, bottom, width, height;
     uint16 cx, cy, bpp, compress, bufsize, size;
@@ -571,7 +569,7 @@ void Client::process_bitmap_updates(STREAM s) {
 }
 
 /* Process a palette update */
-void Client::process_palette(STREAM s) {
+void RDPInvoker::process_palette(STREAM s) {
     COLORENTRY *entry;
     COLORMAP map;
     HCOLORMAP hmap;
@@ -596,7 +594,7 @@ void Client::process_palette(STREAM s) {
 }
 
 /* Process an update PDU */
-void Client::process_update_pdu(STREAM s) {
+void RDPInvoker::process_update_pdu(STREAM s) {
     uint16 update_type;
 
     in_uint16_le(s, update_type);
@@ -624,7 +622,7 @@ void Client::process_update_pdu(STREAM s) {
 }
 
 /* Process data PDU */
-void Client::process_data_pdu(STREAM s) {
+void RDPInvoker::process_data_pdu(STREAM s) {
     uint8 data_pdu_type;
 
     in_uint8s(s, 8);    /* shareid, pad, streamid, length */
@@ -654,7 +652,7 @@ void Client::process_data_pdu(STREAM s) {
 }
 
 /* Establish a connection up to the RDP layer */
-BOOL Client::rdp_connect(char *server, uint32 flags, char *domain, char *password, char *command,
+BOOL RDPInvoker::rdp_connect(char *server, uint32 flags, char *domain, char *password, char *command,
                          char *directory) {
     if (!sec_connect(server))
         return false;
@@ -664,12 +662,12 @@ BOOL Client::rdp_connect(char *server, uint32 flags, char *domain, char *passwor
 }
 
 /* Disconnect from the RDP layer */
-void Client::rdp_disconnect() {
+void RDPInvoker::rdp_disconnect() {
     sec_disconnect();
 }
 
 /* Parse an ASN.1 BER header */
-BOOL Client::ber_parse_header(STREAM s, int tagval, int *length) {
+BOOL RDPInvoker::ber_parse_header(STREAM s, int tagval, int *length) {
     int tag, len;
 
     if (tagval > 0xff) {
@@ -697,7 +695,7 @@ BOOL Client::ber_parse_header(STREAM s, int tagval, int *length) {
 }
 
 /* Output an ASN.1 BER header */
-void Client::ber_out_header(STREAM s, int tagval, int length) {
+void RDPInvoker::ber_out_header(STREAM s, int tagval, int length) {
     if (tagval > 0xff) {
         out_uint16_be(s, tagval);
     } else {
@@ -712,13 +710,13 @@ void Client::ber_out_header(STREAM s, int tagval, int length) {
 }
 
 /* Output an ASN.1 BER integer */
-void Client::ber_out_integer(STREAM s, int value) {
+void RDPInvoker::ber_out_integer(STREAM s, int value) {
     ber_out_header(s, BER_TAG_INTEGER, 2);
     out_uint16_be(s, value);
 }
 
 /* Output a DOMAIN_PARAMS structure (ASN.1 BER) */
-void Client::mcs_out_domain_params(STREAM s, int max_channels, int max_users, int max_tokens, int max_pdusize) {
+void RDPInvoker::mcs_out_domain_params(STREAM s, int max_channels, int max_users, int max_tokens, int max_pdusize) {
     ber_out_header(s, MCS_TAG_DOMAIN_PARAMS, 32);
     ber_out_integer(s, max_channels);
     ber_out_integer(s, max_users);
@@ -731,7 +729,7 @@ void Client::mcs_out_domain_params(STREAM s, int max_channels, int max_users, in
 }
 
 /* Parse a DOMAIN_PARAMS structure (ASN.1 BER) */
-BOOL Client::mcs_parse_domain_params(STREAM s) {
+BOOL RDPInvoker::mcs_parse_domain_params(STREAM s) {
     int length;
 
     ber_parse_header(s, MCS_TAG_DOMAIN_PARAMS, &length);
@@ -741,7 +739,7 @@ BOOL Client::mcs_parse_domain_params(STREAM s) {
 }
 
 /* Send an MCS_CONNECT_INITIAL message (ASN.1 BER) */
-void Client::mcs_send_connect_initial(STREAM mcs_data) {
+void RDPInvoker::mcs_send_connect_initial(STREAM mcs_data) {
     int datalen = mcs_data->end - mcs_data->data;
     int length = 7 + 3 * 34 + 4 + datalen;
     STREAM s;
@@ -767,7 +765,7 @@ void Client::mcs_send_connect_initial(STREAM mcs_data) {
 }
 
 /* Expect a MCS_CONNECT_RESPONSE message (ASN.1 BER) */
-BOOL Client::mcs_recv_connect_response(STREAM mcs_data) {
+BOOL RDPInvoker::mcs_recv_connect_response(STREAM mcs_data) {
     uint8 result;
     int length;
     STREAM s;
@@ -803,7 +801,7 @@ BOOL Client::mcs_recv_connect_response(STREAM mcs_data) {
 }
 
 /* Send an EDrq message (ASN.1 PER) */
-void Client::mcs_send_edrq() {
+void RDPInvoker::mcs_send_edrq() {
     STREAM s;
 
     s = iso_init(5);
@@ -817,7 +815,7 @@ void Client::mcs_send_edrq() {
 }
 
 /* Send an AUrq message (ASN.1 PER) */
-void Client::mcs_send_aurq() {
+void RDPInvoker::mcs_send_aurq() {
     STREAM s;
 
     s = iso_init(1);
@@ -829,7 +827,7 @@ void Client::mcs_send_aurq() {
 }
 
 /* Expect a AUcf message (ASN.1 PER) */
-BOOL Client::mcs_recv_aucf(uint16 *mcs_userid) {
+BOOL RDPInvoker::mcs_recv_aucf(uint16 *mcs_userid) {
     uint8 opcode, result;
     STREAM s;
 
@@ -855,7 +853,7 @@ BOOL Client::mcs_recv_aucf(uint16 *mcs_userid) {
 }
 
 /* Send a CJrq message (ASN.1 PER) */
-void Client::mcs_send_cjrq(uint16 chanid) {
+void RDPInvoker::mcs_send_cjrq(uint16 chanid) {
     STREAM s;
 
     s = iso_init(5);
@@ -869,7 +867,7 @@ void Client::mcs_send_cjrq(uint16 chanid) {
 }
 
 /* Expect a CJcf message (ASN.1 PER) */
-BOOL Client::mcs_recv_cjcf() {
+BOOL RDPInvoker::mcs_recv_cjcf() {
     uint8 opcode, result;
     STREAM s;
 
@@ -897,7 +895,7 @@ BOOL Client::mcs_recv_cjcf() {
 }
 
 /* Initialise an MCS transport data packet */
-STREAM Client::mcs_init(int length) {
+STREAM RDPInvoker::mcs_init(int length) {
     STREAM s;
 
     s = iso_init(length + 8);
@@ -907,7 +905,7 @@ STREAM Client::mcs_init(int length) {
 }
 
 /* Send an MCS transport data packet */
-void Client::mcs_send(STREAM s) {
+void RDPInvoker::mcs_send(STREAM s) {
     uint16 length;
 
     s_pop_layer(s, mcs_hdr);
@@ -924,7 +922,7 @@ void Client::mcs_send(STREAM s) {
 }
 
 /* Receive an MCS transport data packet */
-STREAM Client::mcs_recv() {
+STREAM RDPInvoker::mcs_recv() {
     uint8 opcode, appid, length;
     STREAM s;
 
@@ -950,7 +948,7 @@ STREAM Client::mcs_recv() {
 }
 
 /* Establish a connection up to the MCS layer */
-BOOL Client::mcs_connect(char *server, STREAM mcs_data) {
+BOOL RDPInvoker::mcs_connect(char *server, STREAM mcs_data) {
     if (!iso_connect(server))
         return false;
 
@@ -980,11 +978,11 @@ BOOL Client::mcs_connect(char *server, STREAM mcs_data) {
 }
 
 /* Disconnect from the MCS layer */
-void Client::mcs_disconnect() {
+void RDPInvoker::mcs_disconnect() {
     iso_disconnect();
 }
 
-BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input, int size) {
+BOOL RDPInvoker::bitmap_decompress(unsigned char *output, int width, int height, unsigned char *input, int size) {
     unsigned char *end = input + size;
     unsigned char *prevline = nullptr, *line = nullptr;
     int opcode, count, offset, isfillormix, x = width;
@@ -1168,7 +1166,7 @@ BOOL Client::bitmap_decompress(unsigned char *output, int width, int height, uns
 }
 
 /* Send a self-contained ISO PDU */
-void Client::iso_send_msg(uint8 code) {
+void RDPInvoker::iso_send_msg(uint8 code) {
     STREAM s;
 
     s = tcptool->tcp_init(11);
@@ -1188,7 +1186,7 @@ void Client::iso_send_msg(uint8 code) {
 }
 
 /* Receive a message on the ISO layer, return code */
-STREAM Client::iso_recv_msg(uint8 *code) {
+STREAM RDPInvoker::iso_recv_msg(uint8 *code) {
     STREAM s;
     uint16 length;
     uint8 version;
@@ -1223,7 +1221,7 @@ STREAM Client::iso_recv_msg(uint8 *code) {
 }
 
 /* Initialise ISO transport data packet */
-STREAM Client::iso_init(int length) {
+STREAM RDPInvoker::iso_init(int length) {
     STREAM s;
 
     s = tcptool->tcp_init(length + 7);
@@ -1233,7 +1231,7 @@ STREAM Client::iso_init(int length) {
 }
 
 /* Send an ISO data PDU */
-void Client::iso_send(STREAM s) {
+void RDPInvoker::iso_send(STREAM s) {
     uint16 length;
 
     s_pop_layer(s, iso_hdr);
@@ -1251,7 +1249,7 @@ void Client::iso_send(STREAM s) {
 }
 
 /* Receive ISO transport data packet */
-STREAM Client::iso_recv() {
+STREAM RDPInvoker::iso_recv() {
     STREAM s;
     uint8 code;
 
@@ -1268,7 +1266,7 @@ STREAM Client::iso_recv() {
 }
 
 /* Establish a connection up to the ISO layer */
-BOOL Client::iso_connect(char *server) {
+BOOL RDPInvoker::iso_connect(char *server) {
     uint8 code;
 
     if (!tcptool->tcp_connect(server))
@@ -1289,13 +1287,13 @@ BOOL Client::iso_connect(char *server) {
 }
 
 /* Disconnect from the ISO layer */
-void Client::iso_disconnect() {
+void RDPInvoker::iso_disconnect() {
     iso_send_msg(ISO_PDU_DR);
     tcptool->tcp_disconnect();
 }
 
 
-uint16 Client::xkeymap_translate_button(Qt::MouseButton button) {
+uint16 RDPInvoker::xkeymap_translate_button(Qt::MouseButton button) {
     switch (button) {
         case Qt::MouseButton::LeftButton:    /* left */
             return MOUSE_FLAG_BUTTON1;
@@ -1309,7 +1307,7 @@ uint16 Client::xkeymap_translate_button(Qt::MouseButton button) {
 }
 
 
-void Client::update_modifier_state(uint8 scancode, BOOL pressed) {
+void RDPInvoker::update_modifier_state(uint8 scancode, BOOL pressed) {
 #ifdef WITH_DEBUG
     uint16 old_modifier_state;
 
@@ -1368,7 +1366,7 @@ void Client::update_modifier_state(uint8 scancode, BOOL pressed) {
 }
 
 /* Send keyboard input */
-void Client::rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode) {
+void RDPInvoker::rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode) {
     update_modifier_state(scancode, !(flags & RDP_KEYRELEASE));
 
     if (scancode & SCANCODE_EXTENDED) {
@@ -1380,7 +1378,7 @@ void Client::rdp_send_scancode(uint32 time, uint16 flags, uint8 scancode) {
 }
 
 /* Generate a session key and RC4 keys, given client and server randoms */
-void Client::licence_generate_keys(uint8 *client_key, uint8 *server_key, uint8 *client_rsa) {
+void RDPInvoker::licence_generate_keys(uint8 *client_key, uint8 *server_key, uint8 *client_rsa) {
     uint8 session_key[48];
     uint8 temp_hash[48];
 
@@ -1396,7 +1394,7 @@ void Client::licence_generate_keys(uint8 *client_key, uint8 *server_key, uint8 *
 }
 
 /* Send a licence request packet */
-void Client::licence_send_request(uint8 *client_random, uint8 *rsa_data, char *user, char *host) {
+void RDPInvoker::licence_send_request(uint8 *client_random, uint8 *rsa_data, char *user, char *host) {
     uint32 sec_flags = SEC_LICENCE_NEG;
     uint16 userlen = strlen(user) + 1;
     uint16 hostlen = strlen(host) + 1;
@@ -1431,7 +1429,7 @@ void Client::licence_send_request(uint8 *client_random, uint8 *rsa_data, char *u
 }
 
 /* Process a licence demand packet */
-void Client::licence_process_demand(STREAM s) {
+void RDPInvoker::licence_process_demand(STREAM s) {
     uint8 nullptr_data[SEC_MODULUS_SIZE];
     uint8 *server_random;
 #ifdef SAVE_LICENCE
@@ -1453,17 +1451,17 @@ void Client::licence_process_demand(STREAM s) {
 }
 
 /* Process an authentication request packet */
-void Client::licence_process_authreq(STREAM s) {
+void RDPInvoker::licence_process_authreq(STREAM s) {
     throw not_implemented_error();
 }
 
 /* Process an licence issue packet */
-void Client::licence_process_issue(STREAM s) {
+void RDPInvoker::licence_process_issue(STREAM s) {
     throw not_implemented_error();
 }
 
 /* Process a licence packet */
-void Client::licence_process(STREAM s) {
+void RDPInvoker::licence_process(STREAM s) {
     uint16 tag;
 
     in_uint16_le(s, tag);
@@ -1493,7 +1491,7 @@ void Client::licence_process(STREAM s) {
 }
 
 /* Read field indicating which parameters are present */
-void Client::rdp_in_present(STREAM s, uint32 *present, uint8 flags, int size) {
+void RDPInvoker::rdp_in_present(STREAM s, uint32 *present, uint8 flags, int size) {
     uint8 bits;
     int i;
 
@@ -1516,7 +1514,7 @@ void Client::rdp_in_present(STREAM s, uint32 *present, uint8 flags, int size) {
 }
 
 /* Read a co-ordinate (16-bit, or 8-bit delta) */
-void Client::rdp_in_coord(STREAM s, uint16 *coord, BOOL delta) {
+void RDPInvoker::rdp_in_coord(STREAM s, uint16 *coord, BOOL delta) {
     sint8 change;
 
     if (delta) {
@@ -1528,13 +1526,13 @@ void Client::rdp_in_coord(STREAM s, uint16 *coord, BOOL delta) {
 }
 
 /* Read a color entry */
-void Client::rdp_in_color(STREAM s, uint8 *color) {
+void RDPInvoker::rdp_in_color(STREAM s, uint8 *color) {
     in_uint8(s, *color);
     s->p += 2;
 }
 
 /* Parse bounds information */
-BOOL Client::rdp_parse_bounds(STREAM s, BOUNDS *bounds) {
+BOOL RDPInvoker::rdp_parse_bounds(STREAM s, BOUNDS *bounds) {
     uint8 present;
 
     in_uint8(s, present);
@@ -1563,7 +1561,7 @@ BOOL Client::rdp_parse_bounds(STREAM s, BOUNDS *bounds) {
 }
 
 /* Parse a pen */
-BOOL Client::rdp_parse_pen(STREAM s, PEN *pen, uint32 present) {
+BOOL RDPInvoker::rdp_parse_pen(STREAM s, PEN *pen, uint32 present) {
     if (present & 1)
         in_uint8(s, pen->style);
 
@@ -1577,7 +1575,7 @@ BOOL Client::rdp_parse_pen(STREAM s, PEN *pen, uint32 present) {
 }
 
 /* Parse a brush */
-BOOL Client::rdp_parse_brush(STREAM s, BRUSH *brush, uint32 present) {
+BOOL RDPInvoker::rdp_parse_brush(STREAM s, BRUSH *brush, uint32 present) {
     if (present & 1)
         in_uint8(s, brush->xorigin);
 
@@ -1596,7 +1594,7 @@ BOOL Client::rdp_parse_brush(STREAM s, BRUSH *brush, uint32 present) {
 }
 
 /* Process a destination blt order */
-void Client::process_destblt(STREAM s, DESTBLT_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_destblt(STREAM s, DESTBLT_ORDER *os, uint32 present, BOOL delta) {
     if (present & 0x01)
         rdp_in_coord(s, &os->x, delta);
 
@@ -1616,7 +1614,7 @@ void Client::process_destblt(STREAM s, DESTBLT_ORDER *os, uint32 present, BOOL d
 }
 
 /* Process a pattern blt order */
-void Client::process_patblt(STREAM s, PATBLT_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_patblt(STREAM s, PATBLT_ORDER *os, uint32 present, BOOL delta) {
     if (present & 0x0001)
         rdp_in_coord(s, &os->x, delta);
 
@@ -1645,7 +1643,7 @@ void Client::process_patblt(STREAM s, PATBLT_ORDER *os, uint32 present, BOOL del
 }
 
 /* Process a screen blt order */
-void Client::process_screenblt(STREAM s, SCREENBLT_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_screenblt(STREAM s, SCREENBLT_ORDER *os, uint32 present, BOOL delta) {
     if (present & 0x0001)
         rdp_in_coord(s, &os->x, delta);
 
@@ -1671,7 +1669,7 @@ void Client::process_screenblt(STREAM s, SCREENBLT_ORDER *os, uint32 present, BO
 }
 
 /* Process a line order */
-void Client::process_line(STREAM s, LINE_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_line(STREAM s, LINE_ORDER *os, uint32 present, BOOL delta) {
     if (present & 0x0001) in_uint16_le(s, os->mixmode);
 
     if (present & 0x0002)
@@ -1703,7 +1701,7 @@ void Client::process_line(STREAM s, LINE_ORDER *os, uint32 present, BOOL delta) 
 }
 
 /* Process an opaque rectangle order */
-void Client::process_rect(STREAM s, RECT_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_rect(STREAM s, RECT_ORDER *os, uint32 present, BOOL delta) {
     if (present & 0x01)
         rdp_in_coord(s, &os->x, delta);
 
@@ -1723,7 +1721,7 @@ void Client::process_rect(STREAM s, RECT_ORDER *os, uint32 present, BOOL delta) 
 }
 
 /* Process a desktop save order */
-void Client::process_desksave(STREAM s, DESKSAVE_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_desksave(STREAM s, DESKSAVE_ORDER *os, uint32 present, BOOL delta) {
     int width, height;
 
     if (present & 0x01) in_uint32_le(s, os->offset);
@@ -1753,7 +1751,7 @@ void Client::process_desksave(STREAM s, DESKSAVE_ORDER *os, uint32 present, BOOL
 }
 
 /* Process a memory blt order */
-void Client::process_memblt(STREAM s, MEMBLT_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_memblt(STREAM s, MEMBLT_ORDER *os, uint32 present, BOOL delta) {
     HRDPBITMAP bitmap;
 
     if (present & 0x0001) {
@@ -1792,7 +1790,7 @@ void Client::process_memblt(STREAM s, MEMBLT_ORDER *os, uint32 present, BOOL del
 }
 
 /* Process a 3-way blt order */
-void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL delta) {
     HRDPBITMAP bitmap;
 
     if (present & 0x000001) {
@@ -1842,7 +1840,7 @@ void Client::process_triblt(STREAM s, TRIBLT_ORDER *os, uint32 present, BOOL del
 }
 
 /* Parse a delta co-ordinate in polyline order form */
-int Client::parse_delta(const uint8 *buffer, int *offset) {
+int RDPInvoker::parse_delta(const uint8 *buffer, int *offset) {
     int value = buffer[(*offset)++];
     int two_byte = value & 0x80;
 
@@ -1858,7 +1856,7 @@ int Client::parse_delta(const uint8 *buffer, int *offset) {
 }
 
 /* Process a polyline order */
-void Client::process_polyline(STREAM s, POLYLINE_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_polyline(STREAM s, POLYLINE_ORDER *os, uint32 present, BOOL delta) {
     int index, line, data;
     int x, y, xfrom, yfrom;
     uint8 flags = 0;
@@ -1920,7 +1918,7 @@ void Client::process_polyline(STREAM s, POLYLINE_ORDER *os, uint32 present, BOOL
 }
 
 /* Process a text order */
-void Client::process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta) {
+void RDPInvoker::process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta) {
     int i;
 
     if (present & 0x000001)
@@ -1976,7 +1974,7 @@ void Client::process_text2(STREAM s, TEXT2_ORDER *os, uint32 present, BOOL delta
 }
 
 /* Process a raw bitmap cache order */
-void Client::process_raw_bmpcache(STREAM s) {
+void RDPInvoker::process_raw_bmpcache(STREAM s) {
     HRDPBITMAP bitmap;
     uint16 cache_idx, bufsize;
     uint8 cache_id, width, height, bpp;
@@ -2003,7 +2001,7 @@ void Client::process_raw_bmpcache(STREAM s) {
 }
 
 /* Process a bitmap cache order */
-void Client::process_bmpcache(STREAM s) {
+void RDPInvoker::process_bmpcache(STREAM s) {
     HRDPBITMAP bitmap;
     uint16 cache_idx, size;
     uint8 cache_id, width, height, bpp;
@@ -2032,7 +2030,7 @@ void Client::process_bmpcache(STREAM s) {
 }
 
 /* Process a colormap cache order */
-void Client::process_colcache(STREAM s) {
+void RDPInvoker::process_colcache(STREAM s) {
     COLORENTRY *entry;
     COLORMAP map;
     HCOLORMAP hmap;
@@ -2058,7 +2056,7 @@ void Client::process_colcache(STREAM s) {
 }
 
 /* Process a font cache order */
-void Client::process_fontcache(STREAM s) {
+void RDPInvoker::process_fontcache(STREAM s) {
     HGLYPH bitmap;
     uint8 font, nglyphs;
     uint16 character, offset, baseline, width, height;
@@ -2084,7 +2082,7 @@ void Client::process_fontcache(STREAM s) {
 }
 
 /* Process a secondary order */
-void Client::process_secondary_order(STREAM s) {
+void RDPInvoker::process_secondary_order(STREAM s) {
     uint16 length;
     uint8 type;
     uint8 *next_order;
@@ -2120,7 +2118,7 @@ void Client::process_secondary_order(STREAM s) {
 }
 
 /* Process an order PDU */
-void Client::process_orders(STREAM s) {
+void RDPInvoker::process_orders(STREAM s) {
     RDP_ORDER_STATE *os = &order_state;
     uint32 present;
     uint16 num_orders;
@@ -2236,14 +2234,14 @@ void Client::process_orders(STREAM s) {
 }
 
 /* Reset order state */
-void Client::reset_order_state() {
+void RDPInvoker::reset_order_state() {
     memset(&order_state, 0, sizeof(order_state));
     order_state.order_type = RDP_ORDER_PATBLT;
 }
 
 
 /* Output a uint32 into a buffer (little-endian) */
-void Client::buf_out_uint32(uint8 *buffer, uint32 value) {
+void RDPInvoker::buf_out_uint32(uint8 *buffer, uint32 value) {
     buffer[0] = (value) & 0xff;
     buffer[1] = (value >> 8) & 0xff;
     buffer[2] = (value >> 16) & 0xff;
@@ -2255,7 +2253,7 @@ void Client::buf_out_uint32(uint8 *buffer, uint32 value) {
  * a client and server salt) and a global salt value used for padding.
  * Both SHA1 and MD5 algorithms are used.
  */
-void Client::sec_hash_48(uint8 *out, uint8 *in, uint8 *salt1, uint8 *salt2, uint8 salt) {
+void RDPInvoker::sec_hash_48(uint8 *out, uint8 *in, uint8 *salt1, uint8 *salt2, uint8 salt) {
     uint8 shasig[20];
     uint8 pad[4];
     SHA_CTX sha;
@@ -2283,7 +2281,7 @@ void Client::sec_hash_48(uint8 *out, uint8 *in, uint8 *salt1, uint8 *salt2, uint
  * Weaker 16-byte transformation, also using two 32-byte salts, but
  * only using a single round of MD5.
  */
-void Client::sec_hash_16(uint8 *out, uint8 *in, uint8 *salt1, uint8 *salt2) {
+void RDPInvoker::sec_hash_16(uint8 *out, uint8 *in, uint8 *salt1, uint8 *salt2) {
     MD5_CTX md5;
 
     MD5_Init(&md5);
@@ -2294,14 +2292,14 @@ void Client::sec_hash_16(uint8 *out, uint8 *in, uint8 *salt1, uint8 *salt2) {
 }
 
 /* Reduce key entropy from 64 to 40 bits */
-void Client::sec_make_40bit(uint8 *key) {
+void RDPInvoker::sec_make_40bit(uint8 *key) {
     key[0] = 0xd1;
     key[1] = 0x26;
     key[2] = 0x9e;
 }
 
 /* Generate a session key and RC4 keys, given client and server randoms */
-void Client::sec_generate_keys(uint8 *client_key, uint8 *server_key, int rc4_key_size) {
+void RDPInvoker::sec_generate_keys(uint8 *client_key, uint8 *server_key, int rc4_key_size) {
     uint8 session_key[48];
     uint8 temp_hash[48];
     uint8 input[48];
@@ -2340,7 +2338,7 @@ void Client::sec_generate_keys(uint8 *client_key, uint8 *server_key, int rc4_key
 }
 
 /* Generate a signature hash, using a combination of SHA1 and MD5 */
-void Client::sec_sign(uint8 *signature, int siglen, uint8 *session_key, int keylen, uint8 *data, int datalen) {
+void RDPInvoker::sec_sign(uint8 *signature, int siglen, uint8 *session_key, int keylen, uint8 *data, int datalen) {
     uint8 shasig[20];
     uint8 md5sig[16];
     uint8 lenhdr[4];
@@ -2366,7 +2364,7 @@ void Client::sec_sign(uint8 *signature, int siglen, uint8 *session_key, int keyl
 }
 
 /* Update an encryption key - similar to the signing process */
-void Client::sec_update(uint8 *key, uint8 *update_key) {
+void RDPInvoker::sec_update(uint8 *key, uint8 *update_key) {
     uint8 shasig[20];
     SHA_CTX sha;
     MD5_CTX md5;
@@ -2392,7 +2390,7 @@ void Client::sec_update(uint8 *key, uint8 *update_key) {
 }
 
 /* Encrypt data using RC4 */
-void Client::sec_encrypt(uint8 *data, int length) {
+void RDPInvoker::sec_encrypt(uint8 *data, int length) {
     static int use_count;
 
     if (use_count == 4096) {
@@ -2406,7 +2404,7 @@ void Client::sec_encrypt(uint8 *data, int length) {
 }
 
 /* Decrypt data using RC4 */
-void Client::sec_decrypt(uint8 *data, int length) {
+void RDPInvoker::sec_decrypt(uint8 *data, int length) {
     static int use_count;
 
     if (use_count == 4096) {
@@ -2419,7 +2417,7 @@ void Client::sec_decrypt(uint8 *data, int length) {
     use_count++;
 }
 
-void Client::reverse(uint8 *p, int len) {
+void RDPInvoker::reverse(uint8 *p, int len) {
     int i, j;
     uint8 temp;
 
@@ -2431,7 +2429,7 @@ void Client::reverse(uint8 *p, int len) {
 }
 
 /* Perform an RSA public key encryption operation */
-void Client::sec_rsa_encrypt(uint8 *out, uint8 *in, int len, uint8 *modulus, uint8 *exponent) {
+void RDPInvoker::sec_rsa_encrypt(uint8 *out, uint8 *in, int len, uint8 *modulus, uint8 *exponent) {
     BN_CTX *ctx;
     BIGNUM *mod, *exp, *x, *y;
     uint8 inr[SEC_MODULUS_SIZE];
@@ -2465,7 +2463,7 @@ void Client::sec_rsa_encrypt(uint8 *out, uint8 *in, int len, uint8 *modulus, uin
 }
 
 /* Initialise secure transport packet */
-STREAM Client::sec_init(uint32 flags, int maxlen) {
+STREAM RDPInvoker::sec_init(uint32 flags, int maxlen) {
     int hdrlen;
     STREAM s;
 
@@ -2480,7 +2478,7 @@ STREAM Client::sec_init(uint32 flags, int maxlen) {
 }
 
 /* Transmit secure transport packet */
-void Client::sec_send(STREAM s, uint32 flags) {
+void RDPInvoker::sec_send(STREAM s, uint32 flags) {
     int datalen;
 
     s_pop_layer(s, sec_hdr);
@@ -2502,7 +2500,7 @@ void Client::sec_send(STREAM s, uint32 flags) {
 }
 
 /* Transfer the client random to the server */
-void Client::sec_establish_key() {
+void RDPInvoker::sec_establish_key() {
     uint32 length = SEC_MODULUS_SIZE + SEC_PADDING_SIZE;
     uint32 flags = SEC_CLIENT_RANDOM;
     STREAM s;
@@ -2518,7 +2516,7 @@ void Client::sec_establish_key() {
 }
 
 /* Output connect initial data blob */
-void Client::sec_out_mcs_data(STREAM s) {
+void RDPInvoker::sec_out_mcs_data(STREAM s) {
     int hostlen = 2 * strlen(hostname);
 
     if (hostlen > 30)
@@ -2572,7 +2570,7 @@ void Client::sec_out_mcs_data(STREAM s) {
 }
 
 /* Parse a public key structure */
-BOOL Client::sec_parse_public_key(STREAM s, uint8 **modulus, uint8 **exponent) {
+BOOL RDPInvoker::sec_parse_public_key(STREAM s, uint8 **modulus, uint8 **exponent) {
     uint32 magic, modulus_len;
 
     in_uint32_le(s, magic);
@@ -2596,7 +2594,7 @@ BOOL Client::sec_parse_public_key(STREAM s, uint8 **modulus, uint8 **exponent) {
 }
 
 /* Parse a crypto information structure */
-BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
+BOOL RDPInvoker::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
                                   uint8 **server_random, uint8 **modulus, uint8 **exponent) {
     uint32 crypt_level, random_len, rsa_info_len;
     uint16 tag, length;
@@ -2653,14 +2651,14 @@ BOOL Client::sec_parse_crypt_info(STREAM s, uint32 *rc4_key_size,
 
 
 /* Generate a 32-byte random for the secure transport code. */
-void Client::generate_random(uint8 *random) {
+void RDPInvoker::generate_random(uint8 *random) {
     for (int i = 0; i < SEC_RANDOM_SIZE; ++i) {
         random[i] = (uint8) rand();
     }
 }
 
 /* Process crypto information blob */
-void Client::sec_process_crypt_info(STREAM s) {
+void RDPInvoker::sec_process_crypt_info(STREAM s) {
     uint8 *server_random, *modulus, *exponent;
     uint8 client_random[SEC_RANDOM_SIZE];
     uint32 rc4_key_size;
@@ -2675,7 +2673,7 @@ void Client::sec_process_crypt_info(STREAM s) {
 }
 
 /* Process connect response data blob */
-void Client::sec_process_mcs_data(STREAM s) {
+void RDPInvoker::sec_process_mcs_data(STREAM s) {
     uint16 tag, length;
     uint8 *next_tag;
     uint8 len;
@@ -2712,7 +2710,7 @@ void Client::sec_process_mcs_data(STREAM s) {
 }
 
 /* Receive secure transport packet */
-STREAM Client::sec_recv() {
+STREAM RDPInvoker::sec_recv() {
     uint32 sec_flags;
     STREAM s;
 
@@ -2738,7 +2736,7 @@ STREAM Client::sec_recv() {
 }
 
 /* Establish a secure connection */
-BOOL Client::sec_connect(char *server) {
+BOOL RDPInvoker::sec_connect(char *server) {
     struct stream mcs_data;
 
     /* We exchange some RDP data during the MCS-Connect */
@@ -2757,21 +2755,21 @@ BOOL Client::sec_connect(char *server) {
 }
 
 /* Disconnect a connection */
-void Client::sec_disconnect() {
+void RDPInvoker::sec_disconnect() {
     mcs_disconnect();
 }
 
-XWin_Ui *Client::getUi() {
+RDPXWin *RDPInvoker::getUi() {
     return xwin_ui;
 }
 
-Client::~Client() {
+RDPInvoker::~RDPInvoker() {
     rdp_disconnect();
     delete[]pad_54;
     delete[]pad_92;
 }
 
-int Client::getminkeycode() const {
+int RDPInvoker::getminkeycode() const {
     return min_keycode;
 }
 

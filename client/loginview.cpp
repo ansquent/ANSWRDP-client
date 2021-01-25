@@ -2,9 +2,7 @@
 #include "ui_loginview.h"
 #include <QTcpSocket>
 #include <QMessageBox>
-#include "config.h"
-#include "reader.h"
-#include "writer.h"
+#include "utils.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -15,6 +13,7 @@ Loginview::Loginview(QWidget *parent)
     , expected_length(-1)
 {
     ui->setupUi(this);
+    this->setWindowTitle("登录");
     buffer.clear();
     connect(socket, SIGNAL(disconnected()), this, SLOT(doDisconnected()));
 }

@@ -15,8 +15,7 @@
 #include <QBitmap>
 #include "constants.h"
 
-
-class XWin_Ui {
+class RDPXWin {
 private:
     std::map<int, QImage::Format> bit_to_format;
     int width, height, bpp;
@@ -82,9 +81,9 @@ private:
                   int &x, int &y, int &mixmode, int &bgcolor, int &fgcolor);
 
 public:
-    XWin_Ui(int, int, int);
+    RDPXWin(int, int, int);
 
-    ~XWin_Ui();
+    ~RDPXWin();
 
     QPixmap * getPixmap(){
         return pixmap;

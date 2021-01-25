@@ -16,14 +16,14 @@
 #include "third_party/openssl/include/rc4.h"
 #include "constants.h"
 
-class XWin_Ui;
+class RDPXWin;
 
-class TcpTool;
+class RDPTcpTool;
 
-class Client {
+class RDPInvoker {
 private:
-    XWin_Ui *xwin_ui;
-    TcpTool *tcptool;
+    RDPXWin *xwin_ui;
+    RDPTcpTool *tcptool;
     int keylayout;        /* Defaults to US keyboard layout */
     int width;        /* If width or height are reset to zero, the geometry will
                         be fetched from _NET_WORKAREA */
@@ -283,11 +283,11 @@ private:
     void update_modifier_state(uint8 scancode, BOOL pressed);
 
 public:
-    Client(XWin_Ui *ui, TcpTool *tool, char *hostname, char *username);
+    RDPInvoker(RDPXWin *ui, RDPTcpTool *tool, char *hostname, char *username);
 
-    virtual ~Client();
+    virtual ~RDPInvoker();
 
-    XWin_Ui *getUi();
+    RDPXWin *getUi();
 
     void rdp_main_loop();
 

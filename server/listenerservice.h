@@ -5,7 +5,7 @@
 #include <QtService>
 #include <QApplication>
 #include <QTcpServer>
-#include "server.h"
+#include "networkserver.h"
 
 class ListenerService: public QtService<QCoreApplication>
 {
@@ -16,7 +16,7 @@ protected:
     void pause();
     void resume();
 private:
-    Server * server;
+    NetworkServer * server;
 };
 
 #endif // LISTENERSERVICE_H

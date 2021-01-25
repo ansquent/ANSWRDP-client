@@ -6,7 +6,7 @@
 #include <QTcpSocket>
 #include <QHostInfo>
 
-class TcpTool : public QObject {
+class RDPTcpTool : public QObject {
 Q_OBJECT
 private:
     QTcpSocket *sock;
@@ -15,9 +15,9 @@ private:
     int tcp_port_rdp;
 
 public:
-    TcpTool();
+    RDPTcpTool();
 
-    ~TcpTool() override;
+    ~RDPTcpTool() override;
 
     STREAM tcp_init(int maxlen);
 

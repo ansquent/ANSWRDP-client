@@ -21,11 +21,8 @@ SOURCES += \
     main.cpp
 
 HEADERS += \
-    config.h \
     loginview.h \
-    message.h \
-    reader.h \
-    writer.h
+    utils.h
 
 FORMS += \
     loginview.ui

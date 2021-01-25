@@ -1,5 +1,4 @@
 #include "listenerservice.h"
-#include <QDebug>
 #include <QCoreApplication>
 #include <QObject>
 #include "util.h"
@@ -9,8 +8,7 @@ ListenerService::ListenerService(int argc, char ** argv):
 {
     setServiceDescription("A service implemented with Qt.");
     setServiceFlags(QtServiceBase::CanBeSuspended);
-    server = new Server();
-    Util::writeToFile("C:\\1.txt", QString("service").toUtf8());
+    server = new NetworkServer();
 }
 
 void ListenerService::start(){

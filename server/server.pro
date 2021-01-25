@@ -2,7 +2,7 @@ QT       += core gui sql network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
-
+include("./third_party/service/src/qtservice.pri")
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
@@ -15,32 +15,34 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    database.cpp \
     listenerservice.cpp \
     main.cpp \
-    mysocket.cpp \
-    server.cpp \
+    networkserver.cpp \
+    networksocket.cpp \
+    rdpinvoker.cpp \
+    rdptcp.cpp \
+    rdpxwin.cpp \
     user.cpp \
-    util.cpp
+    mainwindow.cpp \
+    rdpthread.cpp
 
 HEADERS += \
-    config.h \
-    database.h \
     listenerservice.h \
-    mysocket.h \
-    server.h \
+    networkserver.h \
+    networksocket.h \
+    rdpinvoker.h \
+    rdptcp.h \
+    rdpxwin.h \
     user.h \
-    util.h
-
-INCLUDEPATH += \
-    "./third_party/service/src"
-#net user
-LIBS += \
-    "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Lib\NetAPI32.lib" \
-    "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Lib\UserEnv.Lib" \
-    "C:\Users\Administrator\Documents\qt\server\third_party\service\lib\libQtSolutions_Service-head.a"
+    util.h \
+    constants.h \
+    mainwindow.h \
+    rdpthread.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+unix:!macx: LIBS += -lcrypto
+unix:!macx: LIBS += -lssl

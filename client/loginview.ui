@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>582</width>
-    <height>298</height>
+    <height>346</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,16 +17,16 @@
    <widget class="QPushButton" name="loginButton">
     <property name="geometry">
      <rect>
-      <x>60</x>
-      <y>200</y>
+      <x>70</x>
+      <y>230</y>
       <width>111</width>
       <height>51</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <family>8514oem</family>
-      <pointsize>15</pointsize>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
      </font>
     </property>
     <property name="text">
@@ -36,33 +36,20 @@
    <widget class="QPushButton" name="regButton">
     <property name="geometry">
      <rect>
-      <x>410</x>
-      <y>200</y>
+      <x>380</x>
+      <y>230</y>
       <width>111</width>
       <height>51</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <family>8514oem</family>
-      <pointsize>15</pointsize>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
      </font>
     </property>
     <property name="text">
      <string>注册</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="line">
-    <property name="geometry">
-     <rect>
-      <x>250</x>
-      <y>20</y>
-      <width>54</width>
-      <height>231</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>||||||||</string>
     </property>
    </widget>
    <widget class="QLabel" name="username_login">
@@ -74,6 +61,12 @@
       <height>16</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
     <property name="text">
      <string>用户名</string>
     </property>
@@ -81,11 +74,17 @@
    <widget class="QLineEdit" name="iUsername_login">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>110</x>
       <y>90</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>1</string>
@@ -94,11 +93,17 @@
    <widget class="QLineEdit" name="iPassword_login">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>110</x>
       <y>130</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>1</string>
@@ -113,6 +118,12 @@
       <height>16</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
     <property name="text">
      <string>密码</string>
     </property>
@@ -120,11 +131,17 @@
    <widget class="QLineEdit" name="iUsername_reg">
     <property name="geometry">
      <rect>
-      <x>400</x>
-      <y>70</y>
+      <x>420</x>
+      <y>90</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>1</string>
@@ -133,11 +150,17 @@
    <widget class="QLabel" name="username_reg">
     <property name="geometry">
      <rect>
-      <x>350</x>
-      <y>70</y>
-      <width>41</width>
+      <x>340</x>
+      <y>90</y>
+      <width>51</width>
       <height>16</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>用户名</string>
@@ -146,11 +169,17 @@
    <widget class="QLineEdit" name="iPassword_reg">
     <property name="geometry">
      <rect>
-      <x>400</x>
-      <y>100</y>
+      <x>420</x>
+      <y>130</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>1</string>
@@ -159,11 +188,17 @@
    <widget class="QLabel" name="password_reg">
     <property name="geometry">
      <rect>
-      <x>350</x>
-      <y>100</y>
+      <x>340</x>
+      <y>130</y>
       <width>41</width>
       <height>16</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>密码</string>
@@ -172,11 +207,17 @@
    <widget class="QLineEdit" name="iProgram_login">
     <property name="geometry">
      <rect>
-      <x>80</x>
-      <y>160</y>
+      <x>110</x>
+      <y>170</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>notepad.exe</string>
@@ -186,10 +227,16 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>160</y>
-      <width>41</width>
+      <y>170</y>
+      <width>51</width>
       <height>16</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>程序名</string>
@@ -198,11 +245,17 @@
    <widget class="QLabel" name="hostname_reg">
     <property name="geometry">
      <rect>
-      <x>350</x>
-      <y>40</y>
+      <x>340</x>
+      <y>50</y>
       <width>41</width>
       <height>16</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>主机</string>
@@ -211,11 +264,17 @@
    <widget class="QLineEdit" name="iHostname_reg">
     <property name="geometry">
      <rect>
-      <x>400</x>
-      <y>40</y>
+      <x>420</x>
+      <y>50</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>localhost</string>
@@ -224,11 +283,17 @@
    <widget class="QLineEdit" name="iHostname_login">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>110</x>
       <y>50</y>
       <width>113</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>localhost</string>
@@ -243,6 +308,12 @@
       <height>16</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
     <property name="text">
      <string>主机</string>
     </property>
@@ -254,7 +325,7 @@
      <x>0</x>
      <y>0</y>
      <width>582</width>
-     <height>23</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
