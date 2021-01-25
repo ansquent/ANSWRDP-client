@@ -14,118 +14,121 @@
 
 RDPThread::RDPThread(int width, int height, int bpp,
                      QString hostname, QString username, QString password){
+    this->setWindowTitle("Main - Rdesktop");
+    setGeometry(QRect(0, 0, width, height));
+    panel = new QLabel(this);
+    panel->setGeometry(0, 0, width, height);
+    setAttribute(Qt::WA_Hover, true);
     this->width = width;
     this->height = height;
     this->bpp = bpp;
-    client = nullptr;
     willclose = false;
-    tcptool = nullptr;
-    xwin_ui = nullptr;
     strcpy(this->server, hostname.toStdString().c_str());
     strcpy(this->username, username.toStdString().c_str());
     strcpy(this->password, password.toStdString().c_str());
-}
 
-void RDPThread::run() {
     tcptool = new RDPTcpTool();
     xwin_ui = new RDPXWin(width, height, bpp);
-    client = new RDPInvoker(xwin_ui, tcptool, server, username);
+    client = new RDPInvoker(xwin_ui, tcptool, this->server, this->username);
     uint32 flags = RDP_LOGON_NORMAL | RDP_LOGON_AUTO;
     char domain[256] = {0};
     char shell[256] = {0};
     char directory[256] = {0};
-    if (!client->rdp_connect(server, flags, domain, password, shell, directory)) {
-        return;
+    if (!client->rdp_connect(this->server, flags, domain, this->password, shell, directory)) {
+        info("Connect failed.");
+        this->destroy();
     }
-    memset(password, 0, sizeof(password));
-
+    memset(this->password, 0, sizeof(this->password));
+    timer = new QTimer();
+    timer->setInterval(10);
+    connect(timer, SIGNAL(timeout()), this, SLOT(run()));
+    timer->start();
     info("Initialize finished.");
-    while (true) {
-        if (willclose) {
-            return;
-        }
-        dispatch_message();
-    }
 }
 
-void RDPThread::dispatch_message() {
-    if (tcptool->get_ready()) {
+void RDPThread::run() {
+    if (willclose) {
+        return;
+    } else if (tcptool->get_ready()) {
         client->rdp_main_loop();
-        emit paint();
+        panel->setPixmap(*client->getUi()->getPixmap());
     } else {
         tcptool->trynext();
     }
-    static int i = 0;
-    while (!events.empty()) {
-        QEvent *event = events.dequeue();
-        if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) {
-            QMouseEvent *realEvent = (QMouseEvent *) event;
-            uint16 flags = MOUSE_FLAG_DOWN;
-            uint16 button = RDPInvoker::xkeymap_translate_button(realEvent->button());
-            if (button == 0)
-                return;
-            getClient()->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
-                                        flags | button, realEvent->x(), realEvent->y());
-        } else if (event->type() == QEvent::Wheel) {
-            QWheelEvent *realEvent = (QWheelEvent *) event;
-            uint16 flags = 0;
-            uint16 button;
-            if (realEvent->delta() > 0) {
-                button = MOUSE_FLAG_BUTTON4;
-            } else {
-                button = MOUSE_FLAG_BUTTON5;
-            }
-            client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
-                                   flags | button, realEvent->x(), realEvent->y());
-        } else if (event->type() == QEvent::MouseButtonRelease) {
-            QMouseEvent *realEvent = (QMouseEvent *) event;
-            uint16 flags = 0;
-            uint16 button = RDPInvoker::xkeymap_translate_button(realEvent->button());
-            if (button == 0)
-                return;
-            client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
-                                   flags | button, realEvent->x(), realEvent->y());
-        } else if (event->type() == QEvent::MouseMove) {
-            QMouseEvent *realEvent = (QMouseEvent *) event;
-            client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
-                                   MOUSE_FLAG_MOVE, realEvent->x(), realEvent->y());
-        } else if (event->type() == QEvent::KeyPress) {
-            QKeyEvent *realEvent = (QKeyEvent *) event;
-            int scancode = realEvent->nativeScanCode();
+}
+
+void RDPThread::keyPressEvent(QKeyEvent *event) {
+    QKeyEvent *realEvent = (QKeyEvent *) event;
+    int scancode = realEvent->nativeScanCode();
 #ifdef linux
-            scancode -= client->getminkeycode();
+    scancode -= client->getminkeycode();
 #endif
-            uint32 ev_time = time(nullptr);
+    uint32 ev_time = time(nullptr);
 //            if (client->handle_special_keys(realEvent->nativeVirtualKey(), ev_time, true))
 //                return;
-            if (scancode == 0)
-                return;
-            info("keycode = %d\n", scancode);
-            client->rdp_send_scancode(ev_time, RDP_KEYPRESS, scancode);
-        } else if (event->type() == QEvent::KeyRelease) {
-            QKeyEvent *realEvent = (QKeyEvent *) event;
-            int scancode = realEvent->nativeScanCode();
+    if (scancode == 0)
+        return;
+    info("keycode = %d\n", scancode);
+    client->rdp_send_scancode(ev_time, RDP_KEYPRESS, scancode);
+}
+
+void RDPThread::keyReleaseEvent(QKeyEvent *event) {
+    QKeyEvent *realEvent = (QKeyEvent *) event;
+    int scancode = realEvent->nativeScanCode();
 #ifdef linux
-            scancode -= client->getminkeycode();
+    scancode -= client->getminkeycode();
 #endif
-            uint32 ev_time = time(nullptr);
+    uint32 ev_time = time(nullptr);
 //            if (client->handle_special_keys(realEvent->nativeVirtualKey(), ev_time, false))
 //                return;
-            if (scancode == 0)
-                return;
-            info("keycode = %d\n", scancode);
-            client->rdp_send_scancode(ev_time, RDP_KEYRELEASE, scancode);
-        }
-        delete event;
+    if (scancode == 0)
+        return;
+    info("keycode = %d\n", scancode);
+    client->rdp_send_scancode(ev_time, RDP_KEYRELEASE, scancode);
+}
+
+void RDPThread::mouseMoveEvent(QMouseEvent *realEvent) {
+    client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
+                           MOUSE_FLAG_MOVE, realEvent->x(), realEvent->y());
+}
+
+void RDPThread::mousePressEvent(QMouseEvent *realEvent) {
+    uint16 flags = MOUSE_FLAG_DOWN;
+    uint16 button = RDPInvoker::xkeymap_translate_button(realEvent->button());
+    if (button == 0)
+        return;
+    client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
+                                flags | button, realEvent->x(), realEvent->y());
+}
+
+void RDPThread::mouseReleaseEvent(QMouseEvent *realEvent) {
+    uint16 flags = 0;
+    uint16 button = RDPInvoker::xkeymap_translate_button(realEvent->button());
+    if (button == 0)
+        return;
+    client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
+                           flags | button, realEvent->x(), realEvent->y());
+}
+
+void RDPThread::mouseDoubleClickEvent(QMouseEvent *realEvent) {
+    uint16 flags = MOUSE_FLAG_DOWN;
+    uint16 button = RDPInvoker::xkeymap_translate_button(realEvent->button());
+    if (button == 0)
+        return;
+    client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
+                                flags | button, realEvent->x(), realEvent->y());
+}
+
+void RDPThread::wheelEvent(QWheelEvent *realEvent) {
+    uint16 flags = 0;
+    uint16 button;
+    if (realEvent->delta() > 0) {
+        button = MOUSE_FLAG_BUTTON4;
+    } else {
+        button = MOUSE_FLAG_BUTTON5;
     }
-}
-
-void RDPThread::push_event(QEvent *event) {
-    events.enqueue(event);
-}
-
-RDPInvoker *RDPThread::getClient() {
-    return client;
+    client->rdp_send_input(time(nullptr), RDP_INPUT_MOUSE,
+                           flags | button, realEvent->x(), realEvent->y());
 }
 
 void RDPThread::setClose() {
@@ -133,10 +136,6 @@ void RDPThread::setClose() {
 }
 
 RDPThread::~RDPThread() {
-    while (!events.empty()) {
-        QEvent *event = events.dequeue();
-        delete event;
-    }
     delete client;
     delete tcptool;
     delete xwin_ui;

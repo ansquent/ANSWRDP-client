@@ -10,6 +10,8 @@
 #include <QQueue>
 #include <QTimer>
 #include <QMainWindow>
+#include <QLabel>
+#include <QTimer>
 
 class RDPXWin;
 
@@ -19,11 +21,10 @@ class MainWindow;
 
 class RDPTcpTool;
 
-class RDPThread : public QThread {
+class RDPThread : public QMainWindow {
 Q_OBJECT
 private:
     RDPInvoker *client;
-    QQueue<QEvent *> events;
     RDPTcpTool *tcptool;
     RDPXWin *xwin_ui;
     bool willclose;
@@ -31,27 +32,33 @@ private:
     char server[256] = {0};
     char username[256] = {0};
     char password[256] = {0};
+    QTimer *timer;
+    QLabel *panel;
 public:
     explicit RDPThread(int width, int height, int bpp,
                        QString hostname, QString username, QString password);
-
-    void run() override;
-
-    void push_event(QEvent *);
-
-    RDPInvoker *getClient();
 
     void setClose();
 
     ~RDPThread() override;
 
 private slots:
+    void run();
 
-    void dispatch_message();
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
 
-signals:
+    void keyReleaseEvent(QKeyEvent *event) override;
 
-    void paint();
+    void mouseMoveEvent(QMouseEvent *event) override;
+
+    void mousePressEvent(QMouseEvent *event) override;
+
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
+    void wheelEvent(QWheelEvent *event) override;
+
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 };
 
 

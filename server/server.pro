@@ -23,7 +23,6 @@ SOURCES += \
     rdptcp.cpp \
     rdpxwin.cpp \
     user.cpp \
-    mainwindow.cpp \
     rdpthread.cpp
 
 HEADERS += \
@@ -36,7 +35,6 @@ HEADERS += \
     user.h \
     util.h \
     constants.h \
-    mainwindow.h \
     rdpthread.h
 
 # Default rules for deployment.

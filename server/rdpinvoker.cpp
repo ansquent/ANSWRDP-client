@@ -1,4 +1,3 @@
-#include "mainwindow.h"
 #include <QPaintEvent>
 #include "util.h"
 #include "rdpxwin.h"
@@ -81,7 +80,8 @@ void RDPInvoker::rdp_main_loop() {
                 break;
 
             default:
-                throw not_implemented_error{};
+                fprintf(stderr, "received %d\n", type);
+                //throw not_implemented_error{};
         }
     }
 }
