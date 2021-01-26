@@ -15,7 +15,7 @@ class Loginview : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Loginview(Mainview *, QTcpSocket *);
+    explicit Loginview();
     ~Loginview();
 
 private slots:
@@ -26,6 +26,5 @@ private slots:
 private:
     Ui::Loginview *ui;
     QTcpSocket * socket;
-    Mainview * mainview;
 };
 #endif // LOGINVIEW_H

@@ -4,18 +4,16 @@
 #include <QMessageBox>
 #include "constants.h"
 #include <QDataStream>
-#include "mainview.h"
 #include <QFile>
 #include "streammanager.h"
 
-Loginview::Loginview(Mainview *parent, QTcpSocket * socket)
-    : QMainWindow(parent)
+Loginview::Loginview()
+    : QMainWindow(nullptr)
     , ui(new Ui::Loginview)
 {
     ui->setupUi(this);
     this->setWindowTitle("登录");
-    this->mainview = parent;
-    this->socket = socket;
+    socket = new QTcpSocket();
 }
 
 Loginview::~Loginview()
@@ -28,7 +26,7 @@ void Loginview::on_regButton_clicked()
     QString hostname = ui->iHostname_reg->text();
     socket->connectToHost(hostname, 8888);
     if(!socket->waitForConnected(30))    {
-        QMessageBox::warning(this, "消息", "连接失败！请重新连接", QMessageBox::Yes);
+        QMessageBox::warning(nullptr, "消息", "连接失败！请重新连接", QMessageBox::Yes);
         socket->close();
         return;
     }
@@ -58,8 +56,8 @@ void Loginview::on_loginButton_clicked()
 {
     QString hostname = ui->iHostname_reg->text() ;
     socket->connectToHost(hostname, 8888);
-    if(!socket->waitForConnected(30000))    {
-        QMessageBox::warning(this,"消息","连接失败！请重新连接",QMessageBox::Yes);
+    if(!socket->waitForConnected(30))    {
+        QMessageBox::warning(nullptr, "消息","连接失败！请重新连接", QMessageBox::Yes);
         return;
     }
 
@@ -75,9 +73,9 @@ void Loginview::on_loginButton_clicked()
     BlockReader(socket).stream() >> result;
     if (result == "success"){
         QMessageBox::information(nullptr, "提示", "登录成功");
-        mainview->start();
+        Mainview * mainview = new Mainview(nullptr, socket);
         mainview->show();
-        this->destroy();
+        this->close();
     }
     else {
         QMessageBox::critical(nullptr, "提示", "登录失败");

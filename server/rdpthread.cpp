@@ -38,6 +38,8 @@ void RDPThread::initialize_rdp(){
     char directory[256] = {0};
     if (!invoker->rdp_connect(this->server, flags, domain, this->password, shell, directory)) {
         info("Connect failed.");
+        this->tcptool->tcp_disconnect();
+        deleteLater();
     }
     memset(this->password, 0, sizeof(this->password));
 }
@@ -89,6 +91,7 @@ void RDPThread::initialize_client(){
         BlockWriter(client_socket).stream() << QString::fromLatin1("not defined");
     }
     client_socket->flush();
+    client_socket->close();
     deleteLater();
 }
 
@@ -103,9 +106,11 @@ void RDPThread::run() {
     if (!initialized){
         initialize();
     }
+    qDebug() << "Thread id:" << this->currentThreadId();
+    static int i = 0;
     while (true){
         if (tcptool->get_closed()){
-            return;
+            break;
         }
         else if (tcptool->get_ready()) {
             invoker->rdp_main_loop();
@@ -115,7 +120,7 @@ void RDPThread::run() {
         }
 
         if (!(client_socket->isOpen() && client_socket->isValid())){
-            return;
+            break;
         }
         else if (client_socket->bytesAvailable() > 0){
             dispatch_message();
@@ -123,10 +128,16 @@ void RDPThread::run() {
             client_socket->waitForReadyRead(0);
         }
     }
+
+    client_socket->disconnectFromHost();
+    client_socket->close();
+    tcptool->disconnect();
+    deleteLater();
 }
 
 void RDPThread::write_qimage(){
     QImage image = xwin_ui->getPixmap()->toImage();
+    qDebug() << "image size: " << image.sizeInBytes();
     BlockWriter(client_socket).stream() << image;
     client_socket->flush();
 }
@@ -173,7 +184,7 @@ void RDPThread::dispatch_message() {
         int scancode, nativekey;
         BlockReader(client_socket).stream() >> scancode >> nativekey;
 #ifdef linux
-        scancode -= client->getminkeycode();
+        scancode -= invoker->getminkeycode();
 #endif
         uint32 ev_time = time(nullptr);
 //            if (client->handle_special_keys(realEvent->nativeVirtualKey(), ev_time, true))
@@ -186,7 +197,7 @@ void RDPThread::dispatch_message() {
         int scancode, nativekey;
         BlockReader(client_socket).stream() >> scancode >> nativekey;
 #ifdef linux
-        scancode -= client->getminkeycode();
+        scancode -= invoker->getminkeycode();
 #endif
         uint32 ev_time = time(nullptr);
 //            if (client->handle_special_keys(realEvent->nativeVirtualKey(), ev_time, false))

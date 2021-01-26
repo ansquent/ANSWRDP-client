@@ -1,7 +1,9 @@
 #include "usermanager.h"
 #include <QString>
+#ifdef _WIN32
 #include <Windows.h>
 #include <lm.h>
+#endif
 #include <QCoreApplication>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -21,7 +23,10 @@
 #endif
 #endif
 
-UserManager::UserManager(QString server):token(nullptr){
+UserManager::UserManager(QString server){
+#ifdef _WIN32
+    token = nullptr;
+#endif
     //QCoreApplication::addLibraryPath("C:\\Qt\\Qt5.13.2\\5.13.2\\mingw73_32\\plugins");
     this->server = server;
     sqldb = QSqlDatabase::addDatabase("QSQLITE");
@@ -72,15 +77,17 @@ bool UserManager::login(QString username, QString password){
         this->username = username;
         this->password = password;
 
-        WCHAR win32username[1024] = {0},
+        wchar_t win32username[1024] = {0},
               win32password[1024] = {0};
         this->win32username.toWCharArray(win32username);
         this->win32password.toWCharArray(win32password);
+#ifdef _WIN32
         if (!LogonUserW(win32username, nullptr, win32password, LOGON32_LOGON_BATCH,
                        LOGON32_PROVIDER_DEFAULT, &token)){
             info("LogonUser Failed!");
             return false;
         }
+#endif
         return true;
     }
     return false;
@@ -93,7 +100,7 @@ bool UserManager::reg(QString username, QString password){
     }
     this->username = username;
     this->password = password;
-
+#ifdef _WIN32
     USER_INFO_1 new_user;
     memset(&new_user, 0, sizeof(new_user));
     WCHAR win32username[1024] = {0},
@@ -139,11 +146,12 @@ bool UserManager::reg(QString username, QString password){
         info("Failed Add to local Group! %d\n", re);
         return false;
     }
-
+#endif
     return true;
 }
 
 bool UserManager::runProgram(QString programName){
+#ifdef _WIN32
     WCHAR win32ProgramName[1024] = {0};
     programName.toWCharArray(win32ProgramName);
     STARTUPINFO si = {sizeof(si)};
@@ -163,6 +171,7 @@ bool UserManager::runProgram(QString programName){
         info("CreateProcessAsUser Succeeded!");
         return true;
     }
+#endif
 }
 
 bool UserManager::createUser(QString username, QString password, QString & win32username, QString & win32password){

@@ -7,17 +7,17 @@
 #include <QDataStream>
 #include <QTcpSocket>
 #include <QLabel>
+#include "paintthread.h"
 
 class Mainview : public QMainWindow
 {
     Q_OBJECT
 public:
     explicit Mainview(QWidget *parent, QTcpSocket *);
-    void start();
 
 private:
-    QTcpSocket * socket;
     QLabel * label;
+    PaintThread * paintthread;
 
 private slots:
     void paint();

@@ -7,10 +7,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    QTcpSocket * socket = new QTcpSocket();
-    Mainview mainview(nullptr, socket);
-    mainview.hide();
-    Loginview loginview(&mainview, socket);
+    Loginview loginview;
     loginview.show();
     return a.exec();
 }

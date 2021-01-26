@@ -2,7 +2,9 @@
 #define USER_H
 
 #include <QString>
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 #include <QSqlDatabase>
 #include <QSqlQuery>
 
@@ -27,8 +29,9 @@ private:
     bool checkUser(QString, QString);
     bool createUser(QString, QString, QString &, QString &);
     bool deleteUser(QString, QString);
-
+#ifdef _WIN32
     HANDLE token;
+#endif
 };
 
 #endif // USER_H
