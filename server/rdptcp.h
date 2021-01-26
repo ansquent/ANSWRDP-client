@@ -32,6 +32,8 @@ public:
     bool get_ready();
 
     void trynext();
+
+    bool get_closed();
 };
 
 #endif

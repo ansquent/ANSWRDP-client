@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QTcpSocket>
+#include <QDataStream>
+#include "mainview.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Loginview; }
@@ -13,29 +15,17 @@ class Loginview : public QMainWindow
     Q_OBJECT
 
 public:
-    Loginview(QWidget *parent = nullptr);
+    explicit Loginview(Mainview *, QTcpSocket *);
     ~Loginview();
 
 private slots:
     void on_regButton_clicked();
 
-    void doDisconnected();
-
-    void readRegSocketData();
-
-    void readLoginSocketData();
-
     void on_loginButton_clicked();
 
 private:
-
-    void checkReg(const QByteArray &);
-    void checkLogin(const QByteArray &);
-
     Ui::Loginview *ui;
     QTcpSocket * socket;
-
-    QByteArray buffer, length_buffer;
-    int expected_length;
+    Mainview * mainview;
 };
 #endif // LOGINVIEW_H

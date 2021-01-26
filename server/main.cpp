@@ -1,17 +1,13 @@
 #include <QApplication>
 #include <cstdlib>
 #include <ctime>
-#include "util.h"
-#include "rdpthread.h"
-#define MAX 2
+#include "networkserver.h"
+#include "usermanager.h"
 int main(int argc, char *argv[]) {
     srand(time(nullptr));
     QApplication a(argc, argv);
-    QThread threads[MAX];
-    RDPThread * window[MAX];
-    window[0] = new RDPThread(800, 600, 32, "192.168.199.129", "User", "123456");
-    window[0]->show();
-    window[1] = new RDPThread(800, 600, 32, "192.168.199.129", "Administrator", "123456");
-    window[1]->show();
+    UserManager *manager = new UserManager("127.0.0.1");
+    NetworkServer * server = new NetworkServer(manager);
+    server->listen(QHostAddress::Any, 8888);
     return QApplication::exec();
 }

@@ -6,15 +6,17 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 
-class User
+class UserManager
 {
 public:
-    explicit User(QString);
+    explicit UserManager(QString);
 
     bool login(QString, QString);
     bool reg(QString, QString);
     bool runProgram(QString);
+    bool queryUser(QString, QString, QString &, QString &);
 private:
+    QString server;
     QString username;
     QString password;
     QString win32username;
@@ -24,7 +26,6 @@ private:
     QSqlQuery query;
     bool checkUser(QString, QString);
     bool createUser(QString, QString, QString &, QString &);
-    bool queryUser(QString, QString, QString &, QString &);
     bool deleteUser(QString, QString);
 
     HANDLE token;

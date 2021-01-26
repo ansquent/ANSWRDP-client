@@ -28,7 +28,6 @@
 #include <algorithm>
 #include <QBitmap>
 #include "rdpxwin.h"
-#include "util.h"
 
 typedef struct {
     uint32 flags;

@@ -1,5 +1,4 @@
 #include <QPaintEvent>
-#include "util.h"
 #include "rdpxwin.h"
 #include "rdpinvoker.h"
 #include "rdptcp.h"

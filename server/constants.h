@@ -1,6 +1,7 @@
 #ifndef CONSTANT_H
 #define CONSTANT_H
 #include <exception>
+#include <QString>
 /*
    rdesktop: A Remote Desktop Protocol client.
    Miscellaneous protocol constants
@@ -1068,80 +1069,36 @@ typedef struct stream
 #define KEYDOWNEVENT 3
 #define KEYUPEVENT 4
 #define MOUSEPRESSEVENT 5
-#define MOUSERIGHTPRESSEVENT 6
-#define MOUSEMIDDLEPRESSEVENT 7
 #define MOUSEMOVEEVENT 8
 #define MOUSESCROLLEVENT 9
 #define MOUSERELEASEEVENT 10
-#define MOUSERIGHTRELEASEEVENT 11
-#define MOUSEMIDDLERELEASEEVENT 12
 
-#define ScrollUp 0
-#define ScrollDown -1
+inline void info(const char *format, ...) {
+    char buf[500];
+    va_list vlist;
+    va_start(vlist, format);
+    vsprintf(buf, format, vlist);
+    va_end(vlist);
+    fprintf(stderr, "INFO: %s\n", buf);
+}
 
-typedef struct keydownevent {
-    int keycode;
-} KeyDownEvent;
 
-typedef struct keyupevent {
-    int keycode;
-} KeyUpEvent;
+inline QString getRandomLetters(int length){
+    QString letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    QString result;
+    for (int i = 0; i < length; ++i){
+        result += letters.at(qrand() % letters.length());
+    }
+    return result;
+}
 
-typedef struct mousepressevent_t{
-    int x;
-    int y;
-} MousePressEvent;
-
-typedef struct mousemoveevent_t{
-    int x;
-    int y;
-} MouseMoveEvent;
-
-typedef struct mouserightpressevent_t{
-    int x;
-    int y;
-} MouseRightPressEvent;
-
-typedef struct mousemiddlepressevent_t{
-    int x;
-    int y;
-} MouseMiddlePressEvent;
-
-typedef struct mousescrollevent_t{
-    unsigned char pos;
-} MouseScrollEvent;
-
-typedef struct mousereleaseevent_t{
-    int x;
-    int y;
-} MouseReleaseEvent;
-
-typedef struct mouserightreleaseevent_t{
-    int x;
-    int y;
-} MouseRightReleaseEvent;
-
-typedef struct mousemiddlereleaseevent_t{
-    int x;
-    int y;
-} MouseMiddleReleaseEvent;
-
-typedef union event_t{
-    KeyDownEvent keydownevent;
-    KeyUpEvent keyupevent;
-    MousePressEvent mousepressevent;
-    MouseMoveEvent mousemoveevent;
-    MouseScrollEvent mousescrollevent;
-    MouseRightPressEvent mouserightpressevent;
-    MouseMiddlePressEvent mousemiddlepressevent;
-    MouseReleaseEvent mousereleaseevent;
-    MouseRightReleaseEvent mouserightreleaseevent;
-    MouseMiddleReleaseEvent mousemiddlereleaseevent;
-} EventInfo;
-
-typedef struct message_t {
-    unsigned char message_type;
-    EventInfo message_info;
-} Message;
+inline QString getRandomLetterNums(int length){
+    QString letternums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    QString result;
+    for (int i = 0; i < length; ++i){
+        result += letternums.at(qrand() % letternums.length());
+    }
+    return result;
+}
 
 #endif

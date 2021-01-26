@@ -18,11 +18,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     loginview.cpp \
-    main.cpp
+    main.cpp \
+    mainview.cpp
 
 HEADERS += \
+    constants.h \
     loginview.h \
-    utils.h
+    mainview.h \
+    streammanager.h
 
 FORMS += \
     loginview.ui

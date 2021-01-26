@@ -5,7 +5,8 @@
 #include <QtService>
 #include <QApplication>
 #include <QTcpServer>
-#include "networkserver.h"
+
+class NetworkServer;
 
 class ListenerService: public QtService<QCoreApplication>
 {

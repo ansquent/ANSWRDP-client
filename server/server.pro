@@ -18,22 +18,20 @@ SOURCES += \
     listenerservice.cpp \
     main.cpp \
     networkserver.cpp \
-    networksocket.cpp \
     rdpinvoker.cpp \
     rdptcp.cpp \
     rdpxwin.cpp \
-    user.cpp \
-    rdpthread.cpp
+    rdpthread.cpp \
+    usermanager.cpp
 
 HEADERS += \
     listenerservice.h \
     networkserver.h \
-    networksocket.h \
     rdpinvoker.h \
     rdptcp.h \
     rdpxwin.h \
-    user.h \
-    util.h \
+    streammanager.h \
+    usermanager.h \
     constants.h \
     rdpthread.h
 

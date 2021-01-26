@@ -2,27 +2,25 @@
 #define SERVER_H
 
 #include <QTcpServer>
-#include "networksocket.h"
 #include <list>
 #include <QTcpServer>
-#include "user.h"
+#include <QVector>
 
-class NetworkServer:public QObject
+class RDPThread;
+
+class UserManager;
+
+class NetworkServer:public QTcpServer
 {
     Q_OBJECT
 public:
-    NetworkServer();
+    NetworkServer(UserManager *);
+    void incomingConnection(qintptr handle) override;
+    void closeAll();
+    ~NetworkServer() override;
 private:
-    QTcpServer *tcpServer;
-    NetworkSocket *socket;
-    User user;
-public slots:
-    void readUserSocketData();
-    void disconnectUserData();
-    void pause();
-    void resume();
-public:
-    void start();
+    QVector<RDPThread *> threads;
+    UserManager * manager;
 };
 
 #endif // SOCKET_H

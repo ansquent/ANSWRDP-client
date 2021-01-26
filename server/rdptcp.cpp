@@ -23,7 +23,6 @@
 #include <QHostInfo>
 #include "rdptcp.h"
 #include <iostream>
-#include "util.h"
 
 RDPTcpTool::RDPTcpTool() {
     sock = new QTcpSocket();
@@ -108,6 +107,7 @@ BOOL RDPTcpTool::tcp_connect(char *server) {
 /* Disconnect on the TCP layer */
 void RDPTcpTool::tcp_disconnect() {
     sock->disconnectFromHost();
+    sock->close();
 }
 
 RDPTcpTool::~RDPTcpTool() {
@@ -118,8 +118,11 @@ RDPTcpTool::~RDPTcpTool() {
 
 
 bool RDPTcpTool::get_ready() {
-    bool ready = (sock->bytesAvailable() > 0);
-    return ready;
+    return (sock->bytesAvailable() > 0);
+}
+
+bool RDPTcpTool::get_closed(){
+    return (!sock->isOpen()) || (!sock->isValid());
 }
 
 void RDPTcpTool::trynext() {

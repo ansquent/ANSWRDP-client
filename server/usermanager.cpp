@@ -1,12 +1,13 @@
-#include "user.h"
+#include "usermanager.h"
 #include <QString>
 #include <Windows.h>
 #include <lm.h>
-#include "util.h"
 #include <QCoreApplication>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QDir>
+#include <QVariant>
+#include "constants.h"
 
 #ifdef _WIN32
 #ifndef _WIN64
@@ -20,10 +21,11 @@
 #endif
 #endif
 
-User::User(QString ip):token(nullptr){
+UserManager::UserManager(QString server):token(nullptr){
     //QCoreApplication::addLibraryPath("C:\\Qt\\Qt5.13.2\\5.13.2\\mingw73_32\\plugins");
+    this->server = server;
     sqldb = QSqlDatabase::addDatabase("QSQLITE");
-    sqldb.setHostName(ip);
+    sqldb.setHostName("127.0.0.1");
     QString filename = QDir::currentPath() +QString("/")+ QString("user.db");
     sqldb.setDatabaseName(filename);
     if(!sqldb.open()){
@@ -65,7 +67,7 @@ User::User(QString ip):token(nullptr){
     }
 }
 
-bool User::login(QString username, QString password){
+bool UserManager::login(QString username, QString password){
     if (queryUser(username, password, this->win32username, this->win32password)){
         this->username = username;
         this->password = password;
@@ -84,7 +86,7 @@ bool User::login(QString username, QString password){
     return false;
 }
 
-bool User::reg(QString username, QString password){
+bool UserManager::reg(QString username, QString password){
     if (!createUser(username, password, this->win32username, this->win32password)){
         info("Failed Create User in Database!");
         return false;
@@ -141,7 +143,7 @@ bool User::reg(QString username, QString password){
     return true;
 }
 
-bool User::runProgram(QString programName){
+bool UserManager::runProgram(QString programName){
     WCHAR win32ProgramName[1024] = {0};
     programName.toWCharArray(win32ProgramName);
     STARTUPINFO si = {sizeof(si)};
@@ -163,7 +165,7 @@ bool User::runProgram(QString programName){
     }
 }
 
-bool User::createUser(QString username, QString password, QString & win32username, QString & win32password){
+bool UserManager::createUser(QString username, QString password, QString & win32username, QString & win32password){
     if (!checkUser(username, password)){
         win32username = getRandomLetters(20);
         win32password = getRandomLetterNums(20);
@@ -185,7 +187,7 @@ bool User::createUser(QString username, QString password, QString & win32usernam
     return false;
 }
 
-bool User::checkUser(QString username, QString password){
+bool UserManager::checkUser(QString username, QString password){
     QString execQueryStr = QString("select * from user where username=\"%1\" and password=\"%2\"").arg(username).arg(password);
     if(!query.exec(execQueryStr))
     {
@@ -195,7 +197,7 @@ bool User::checkUser(QString username, QString password){
     return query.next();
 }
 
-bool User::queryUser(QString username, QString password, QString & win32username, QString & win32password){
+bool UserManager::queryUser(QString username, QString password, QString & win32username, QString & win32password){
     if (checkUser(username, password)){
         win32username = query.value(1).toString();
         win32password = query.value(2).toString();
@@ -204,7 +206,7 @@ bool User::queryUser(QString username, QString password, QString & win32username
     return false;
 }
 
-bool User::deleteUser(QString username, QString password){
+bool UserManager::deleteUser(QString username, QString password){
     if (checkUser(username, password)){
         QString execQueryStr = QString("DELETE FROM user where username=\"%1\""
                                             "and password=\"%2\";")

@@ -9,56 +9,53 @@
 #include <QEvent>
 #include <QQueue>
 #include <QTimer>
-#include <QMainWindow>
+#include <QDataStream>
 #include <QLabel>
-#include <QTimer>
+#include <QTcpSocket>
 
 class RDPXWin;
 
 class RDPInvoker;
 
-class MainWindow;
-
 class RDPTcpTool;
 
-class RDPThread : public QMainWindow {
+class UserManager;
+
+class RDPThread : public QThread {
 Q_OBJECT
 private:
-    RDPInvoker *client;
+    RDPInvoker *invoker;
     RDPTcpTool *tcptool;
     RDPXWin *xwin_ui;
-    bool willclose;
     int width, height, bpp;
+    UserManager * manager;
+    QTcpSocket *client_socket;
+    qintptr socketDescriptor;
+    QString hostname;
+
     char server[256] = {0};
     char username[256] = {0};
     char password[256] = {0};
-    QTimer *timer;
-    QLabel *panel;
 public:
-    explicit RDPThread(int width, int height, int bpp,
-                       QString hostname, QString username, QString password);
+    explicit RDPThread(qintptr sockintr, int width, int height, int bpp,
+                       QString hostname, UserManager * manager);
 
-    void setClose();
+    void dispatch_message();
 
     ~RDPThread() override;
 
-private slots:
-    void run();
+private:
+    bool initialized;
 
-protected:
-    void keyPressEvent(QKeyEvent *event) override;
+    void initialize_rdp();
 
-    void keyReleaseEvent(QKeyEvent *event) override;
+    void initialize_client();
 
-    void mouseMoveEvent(QMouseEvent *event) override;
+    void run() override;
 
-    void mousePressEvent(QMouseEvent *event) override;
+    void initialize();
 
-    void mouseReleaseEvent(QMouseEvent *event) override;
-
-    void wheelEvent(QWheelEvent *event) override;
-
-    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void write_qimage();
 };
 
 
