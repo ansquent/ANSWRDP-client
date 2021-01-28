@@ -35,7 +35,7 @@ private:
     // additional data is read from the socket.
     void readMax(QIODevice *io, int n)
     {
-        while (buffer.size() < n) {
+        while (buffer.size() < n && io->isOpen()) {
             if (!io->bytesAvailable()) {
                 io->waitForReadyRead(30000);
             }
