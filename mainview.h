@@ -7,7 +7,7 @@
 #include <QDataStream>
 #include <QTcpSocket>
 #include <QLabel>
-#include "paintthread.h"
+#include <QEvent>
 
 class Mainview : public QMainWindow
 {
@@ -17,10 +17,15 @@ public:
 
 private:
     QLabel * label;
-    PaintThread * paintthread;
+    QImage image;
+    QTimer * timer;
+    QTcpSocket * socket;
+    void paint();
 
 private slots:
-    void paint();
+    void dispatch_image();
+
+    void quit();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;

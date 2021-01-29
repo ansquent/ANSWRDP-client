@@ -8,20 +8,32 @@
 #include <QEvent>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QTimer>
+#include <QMessageBox>
 #include "streammanager.h"
 
 Mainview::Mainview(QWidget *parent, QTcpSocket * socket)
     : QMainWindow(parent)
 {
+    this->socket = socket;
     this->label = new QLabel(this);
-    paintthread = new PaintThread(socket);
-    paintthread->start();
-    connect(paintthread, SIGNAL(paint()), this, SLOT(paint()));
+    this->timer = new QTimer(this);
+    this->timer->setInterval(10);
+    this->timer->start();
+    connect(timer, SIGNAL(timeout()), this, SLOT(dispatch_image()));
+    connect(socket, SIGNAL(disconnected()), this, SLOT(quit()));
+}
+
+void Mainview::quit(){
+    QMessageBox::warning(nullptr, "结束共享", "连接已经断开");
+    socket->disconnectFromHost();
+    socket->close();
+    delete socket;
+    this->close();
 }
 
 
 void Mainview::paint(){
-    QImage image = paintthread->getImage();
     QPixmap pixmap = QPixmap::fromImage(image);
     this->label->setPixmap(pixmap);
     if (this->height() != pixmap.height() || this->width() != pixmap.width()){
@@ -31,30 +43,85 @@ void Mainview::paint(){
     repaint();
 }
 
+void Mainview::dispatch_image(){
+    while (socket->bytesAvailable() > 0){
+        BlockReader(socket).stream() >> image;
+        paint();
+    }
+}
+
 void Mainview::keyPressEvent(QKeyEvent *event) {
-    paintthread->push_event(new QKeyEvent(*event));
+    int scancode = event->nativeScanCode();
+    int nativekey = event->nativeVirtualKey();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", KEYDOWNEVENT);
+    sendpacket.insert("scancode", scancode);
+    sendpacket.insert("nativekey", nativekey);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }
 
 void Mainview::keyReleaseEvent(QKeyEvent *event) {
-    paintthread->push_event(new QKeyEvent(*event));
+    int scancode = event->nativeScanCode();
+    int nativekey = event->nativeVirtualKey();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", KEYUPEVENT);
+    sendpacket.insert("scancode", scancode);
+    sendpacket.insert("nativekey", nativekey);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }
 
 void Mainview::mouseMoveEvent(QMouseEvent *event) {
-    paintthread->push_event(new QMouseEvent(*event));
+    int x = event->x(), y = event->y();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", MOUSEMOVEEVENT);
+    sendpacket.insert("x", x);
+    sendpacket.insert("y", y);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }
 
 void Mainview::mousePressEvent(QMouseEvent *event) {
-    paintthread->push_event(new QMouseEvent(*event));
+    int button = event->button(), x = event->x(), y = event->y();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", MOUSEPRESSEVENT);
+    sendpacket.insert("button", button);
+    sendpacket.insert("x", x);
+    sendpacket.insert("y", y);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }
 
 void Mainview::mouseReleaseEvent(QMouseEvent *event) {
-    paintthread->push_event(new QMouseEvent(*event));
+    int button = event->button(), x = event->x(), y = event->y();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", MOUSERELEASEEVENT);
+    sendpacket.insert("button", button);
+    sendpacket.insert("x", x);
+    sendpacket.insert("y", y);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }
 
 void Mainview::mouseDoubleClickEvent(QMouseEvent *event) {
-    paintthread->push_event(new QMouseEvent(*event));
+    int button = event->button(), x = event->x(), y = event->y();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", MOUSEPRESSEVENT);
+    sendpacket.insert("button", button);
+    sendpacket.insert("x", x);
+    sendpacket.insert("y", y);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }
 
 void Mainview::wheelEvent(QWheelEvent *event) {
-    paintthread->push_event(new QWheelEvent(*event));
+    int delta = event->delta(), x = event->x(), y = event->y();
+    QVariantMap sendpacket;
+    sendpacket.insert("type", MOUSESCROLLEVENT);
+    sendpacket.insert("delta", delta);
+    sendpacket.insert("x", x);
+    sendpacket.insert("y", y);
+    BlockWriter(socket).stream() << sendpacket;
+    socket->flush();
 }

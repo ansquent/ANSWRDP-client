@@ -20,17 +20,18 @@ SOURCES += \
     loginview.cpp \
     main.cpp \
     mainview.cpp \
-    paintthread.cpp
+    managerview.cpp
 
 HEADERS += \
     constants.h \
     loginview.h \
     mainview.h \
-    paintthread.h \
-    streammanager.h
+    streammanager.h \
+    managerview.h
 
 FORMS += \
-    loginview.ui
+    loginview.ui \
+    managerview.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

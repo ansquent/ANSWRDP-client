@@ -5,14 +5,17 @@
 #include "constants.h"
 #include <QDataStream>
 #include <QFile>
+#include <QVariantMap>
+#include <QJsonDocument>
 #include "streammanager.h"
+#include "managerview.h"
 
 Loginview::Loginview()
     : QMainWindow(nullptr)
     , ui(new Ui::Loginview)
 {
     ui->setupUi(this);
-    this->setWindowTitle("登录");
+    setFixedSize(this->width(), this->height());
     socket = new QTcpSocket();
 }
 
@@ -31,18 +34,18 @@ void Loginview::on_regButton_clicked()
         return;
     }
 
-    QString command = "register";
-    QString username = ui->iUsername_reg->text() ;
-    QString password = ui->iPassword_reg->text() ;
+    QVariantMap sendpacket;
+    sendpacket.insert("command", "register");
+    sendpacket.insert("username", ui->iUsername_reg->text());
+    sendpacket.insert("password", ui->iPassword_reg->text());
 
-
-    BlockWriter(socket).stream() << command << username << password;
+    BlockWriter(socket).stream() << sendpacket;
     socket->flush();
 
-    QString result;
-    BlockReader(socket).stream() >> result;
-    qDebug() << "result = " << result;
-    if (result == "success"){
+    QVariantMap receivepacket;
+
+    BlockReader(socket).stream() >> receivepacket;
+    if (receivepacket.value("result") == "success"){
         QMessageBox::information(nullptr, "提示", "注册成功");
     }
     else {
@@ -61,24 +64,28 @@ void Loginview::on_loginButton_clicked()
         return;
     }
 
-    QString command = "login";
-    QString username = ui->iUsername_login->text() ;
-    QString password = ui->iPassword_login->text() ;
+    QVariantMap sendpacket;
+    sendpacket.insert("command", "login");
+    sendpacket.insert("username", ui->iUsername_reg->text());
+    sendpacket.insert("password", ui->iPassword_reg->text());
 
-    BlockWriter(socket).stream() << command << username << password;
-
+    BlockWriter(socket).stream() << sendpacket;
     socket->flush();
 
-    QString result;
-    BlockReader(socket).stream() >> result;
-    if (result == "success"){
+    QVariantMap receivepacket;
+    BlockReader(socket).stream() >> receivepacket;
+    if (receivepacket.value("result") == "success"){
+        Managerview * managerview = new Managerview(nullptr, socket, receivepacket);
         QMessageBox::information(nullptr, "提示", "登录成功");
-        Mainview * mainview = new Mainview(nullptr, socket);
-        mainview->show();
+        managerview->show();
         this->close();
     }
     else {
         QMessageBox::critical(nullptr, "提示", "登录失败");
-        socket->close();
     }
+}
+
+void Loginview::on_aboutLabel_clicked()
+{
+    QMessageBox::information(nullptr, "关于本产品", "ANSW·RDP Version 1.0\nPowered By Northbank Inc.\n基于RDesktop项目进行修改和制作，请支持开源");
 }

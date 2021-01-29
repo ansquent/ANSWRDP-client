@@ -23,6 +23,8 @@ private slots:
 
     void on_loginButton_clicked();
 
+    void on_aboutLabel_clicked();
+
 private:
     Ui::Loginview *ui;
     QTcpSocket * socket;
