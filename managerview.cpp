@@ -43,30 +43,29 @@ void Managerview::on_launchButton_clicked()
     bool ok;
     QString programname = QInputDialog::getText(this, "启动程序",
                                        "请输入需要启动的程序的路径",  QLineEdit::Normal,
-                                                QDir::home().dirName(), &ok);
+                                                "", &ok);
     if (ok){
         QVariantMap sendpacket;
         sendpacket.insert("command", "runprogram");
         sendpacket.insert("programname", programname);
-        BlockWriter(socket).stream() << sendpacket;
-        socket->flush();
+        send_map(socket, sendpacket);
     }
     QVariantMap receivepacket;
-    BlockReader(socket).stream() >> receivepacket;
+    receive_map(socket, receivepacket);
     flushresult(receivepacket);
 }
 
 void Managerview::on_closeButton_clicked()
 {
-    int choose = QMessageBox::warning(nullptr, "关闭程序", "你确定要关闭正在运行的程序吗？可能会丢失数据。", QMessageBox::Yes | QMessageBox::No);
+    int choose = QMessageBox::warning(nullptr, "关闭程序", "你确定要关闭正在运行的程序吗？可能会丢失数据。",
+                                      QMessageBox::Yes | QMessageBox::No);
     if (choose == QMessageBox::Yes){
         QVariantMap sendpacket;
         sendpacket.insert("command", "closeprogram");
-        BlockWriter(socket).stream() << sendpacket;
-        socket->flush();
+        send_map(socket, sendpacket);
     }
     QVariantMap receivepacket;
-    BlockReader(socket).stream() >> receivepacket;
+    receive_map(socket, receivepacket);
     flushresult(receivepacket);
 }
 
@@ -74,9 +73,7 @@ void Managerview::on_gotoButton_clicked()
 {
     QVariantMap sendpacket;
     sendpacket.insert("command", "gotoprogram");
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
-
+    send_map(socket, sendpacket);
     Mainview *mainview = new Mainview(nullptr, socket);
     mainview->show();
     this->close();

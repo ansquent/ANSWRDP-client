@@ -45,7 +45,7 @@ void Mainview::paint(){
 
 void Mainview::dispatch_image(){
     while (socket->bytesAvailable() > 0){
-        BlockReader(socket).stream() >> image;
+        receive_image(socket, image);
         paint();
     }
 }
@@ -57,8 +57,7 @@ void Mainview::keyPressEvent(QKeyEvent *event) {
     sendpacket.insert("type", KEYDOWNEVENT);
     sendpacket.insert("scancode", scancode);
     sendpacket.insert("nativekey", nativekey);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }
 
 void Mainview::keyReleaseEvent(QKeyEvent *event) {
@@ -68,8 +67,7 @@ void Mainview::keyReleaseEvent(QKeyEvent *event) {
     sendpacket.insert("type", KEYUPEVENT);
     sendpacket.insert("scancode", scancode);
     sendpacket.insert("nativekey", nativekey);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }
 
 void Mainview::mouseMoveEvent(QMouseEvent *event) {
@@ -78,8 +76,7 @@ void Mainview::mouseMoveEvent(QMouseEvent *event) {
     sendpacket.insert("type", MOUSEMOVEEVENT);
     sendpacket.insert("x", x);
     sendpacket.insert("y", y);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }
 
 void Mainview::mousePressEvent(QMouseEvent *event) {
@@ -89,8 +86,7 @@ void Mainview::mousePressEvent(QMouseEvent *event) {
     sendpacket.insert("button", button);
     sendpacket.insert("x", x);
     sendpacket.insert("y", y);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }
 
 void Mainview::mouseReleaseEvent(QMouseEvent *event) {
@@ -100,8 +96,7 @@ void Mainview::mouseReleaseEvent(QMouseEvent *event) {
     sendpacket.insert("button", button);
     sendpacket.insert("x", x);
     sendpacket.insert("y", y);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }
 
 void Mainview::mouseDoubleClickEvent(QMouseEvent *event) {
@@ -111,8 +106,7 @@ void Mainview::mouseDoubleClickEvent(QMouseEvent *event) {
     sendpacket.insert("button", button);
     sendpacket.insert("x", x);
     sendpacket.insert("y", y);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }
 
 void Mainview::wheelEvent(QWheelEvent *event) {
@@ -122,6 +116,5 @@ void Mainview::wheelEvent(QWheelEvent *event) {
     sendpacket.insert("delta", delta);
     sendpacket.insert("x", x);
     sendpacket.insert("y", y);
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
+    send_map(socket, sendpacket);
 }

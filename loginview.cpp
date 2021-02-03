@@ -17,6 +17,8 @@ Loginview::Loginview()
     ui->setupUi(this);
     setFixedSize(this->width(), this->height());
     socket = new QTcpSocket();
+    ui->iPassword_login->setEchoMode(QLineEdit::Password);
+    ui->iPassword_reg->setEchoMode(QLineEdit::Password);
 }
 
 Loginview::~Loginview()
@@ -33,18 +35,13 @@ void Loginview::on_regButton_clicked()
         socket->close();
         return;
     }
-
     QVariantMap sendpacket;
     sendpacket.insert("command", "register");
     sendpacket.insert("username", ui->iUsername_reg->text());
     sendpacket.insert("password", ui->iPassword_reg->text());
-
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
-
+    send_map(socket, sendpacket);
     QVariantMap receivepacket;
-
-    BlockReader(socket).stream() >> receivepacket;
+    receive_map(socket, receivepacket);
     if (receivepacket.value("result") == "success"){
         QMessageBox::information(nullptr, "提示", "注册成功");
     }
@@ -57,23 +54,19 @@ void Loginview::on_regButton_clicked()
 
 void Loginview::on_loginButton_clicked()
 {
-    QString hostname = ui->iHostname_reg->text() ;
+    QString hostname = ui->iHostname_login->text() ;
     socket->connectToHost(hostname, 8888);
     if(!socket->waitForConnected(30))    {
         QMessageBox::warning(nullptr, "消息","连接失败！请重新连接", QMessageBox::Yes);
         return;
     }
-
     QVariantMap sendpacket;
     sendpacket.insert("command", "login");
-    sendpacket.insert("username", ui->iUsername_reg->text());
-    sendpacket.insert("password", ui->iPassword_reg->text());
-
-    BlockWriter(socket).stream() << sendpacket;
-    socket->flush();
-
+    sendpacket.insert("username", ui->iUsername_login->text());
+    sendpacket.insert("password", ui->iPassword_login->text());
+    send_map(socket, sendpacket);
     QVariantMap receivepacket;
-    BlockReader(socket).stream() >> receivepacket;
+    receive_map(socket, receivepacket);
     if (receivepacket.value("result") == "success"){
         Managerview * managerview = new Managerview(nullptr, socket, receivepacket);
         QMessageBox::information(nullptr, "提示", "登录成功");
