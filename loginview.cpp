@@ -30,7 +30,7 @@ void Loginview::on_regButton_clicked()
 {
     QString hostname = ui->iHostname_reg->text();
     socket->connectToHost(hostname, 8888);
-    if(!socket->waitForConnected(30))    {
+    if(!socket->waitForConnected(1000))    {
         QMessageBox::warning(nullptr, "消息", "连接失败！请重新连接", QMessageBox::Yes);
         socket->close();
         return;

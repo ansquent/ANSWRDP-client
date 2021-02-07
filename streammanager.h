@@ -8,6 +8,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QImage>
+#include <QTcpSocket>
+#include <QLocalSocket>
 
 class BlockReader
 {
@@ -41,8 +43,8 @@ private:
     void readMax(QIODevice *io, int n)
     {
         while (buffer.size() < n) {
-            if (!io->bytesAvailable()) {
-                io->waitForReadyRead(30000);
+            while (io->bytesAvailable() <= 0) {
+                io->waitForReadyRead(100);
             }
             buffer.write(io->read(n - buffer.size()));
         }
@@ -95,11 +97,20 @@ inline void receive_map(QIODevice * socket, QVariantMap & map){
     map = obj.toVariantMap();
 }
 
-inline void send_map(QIODevice * socket, QVariantMap & map){
+inline void send_map(QTcpSocket * socket, QVariantMap & map){
     QJsonObject obj = QJsonObject::fromVariantMap(map);
     QJsonDocument doc = QJsonDocument(obj);
     QByteArray arr = doc.toJson();
     BlockWriter(socket).stream() << arr;
+    socket->flush();
+}
+
+inline void send_map(QLocalSocket * socket, QVariantMap & map){
+    QJsonObject obj = QJsonObject::fromVariantMap(map);
+    QJsonDocument doc = QJsonDocument(obj);
+    QByteArray arr = doc.toJson();
+    BlockWriter(socket).stream() << arr;
+    socket->flush();
 }
 
 inline void receive_image(QIODevice * socket, QImage & image){
@@ -108,13 +119,24 @@ inline void receive_image(QIODevice * socket, QImage & image){
     image = QImage::fromData(arr);
 }
 
-inline void send_image(QIODevice * socket, QImage & image){
+inline void send_image(QTcpSocket * socket, QImage & image){
     QByteArray arr;
     QBuffer buffer(&arr);
     buffer.open(QIODevice::WriteOnly);
     image.save(&buffer, "png");
     buffer.close();
     BlockWriter(socket).stream() << arr;
+    socket->flush();
+}
+
+inline void send_image(QLocalSocket * socket, QImage & image){
+    QByteArray arr;
+    QBuffer buffer(&arr);
+    buffer.open(QIODevice::WriteOnly);
+    image.save(&buffer, "png");
+    buffer.close();
+    BlockWriter(socket).stream() << arr;
+    socket->flush();
 }
 
 #endif
