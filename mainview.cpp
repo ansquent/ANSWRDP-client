@@ -53,6 +53,9 @@ void Mainview::dispatch_image(){
 void Mainview::keyPressEvent(QKeyEvent *event) {
     int scancode = event->nativeScanCode();
     int nativekey = event->nativeVirtualKey();
+#ifdef linux
+    scancode -= 8;
+#endif
     QVariantMap sendpacket;
     sendpacket.insert("type", KEYDOWNEVENT);
     sendpacket.insert("scancode", scancode);
@@ -63,6 +66,9 @@ void Mainview::keyPressEvent(QKeyEvent *event) {
 void Mainview::keyReleaseEvent(QKeyEvent *event) {
     int scancode = event->nativeScanCode();
     int nativekey = event->nativeVirtualKey();
+#ifdef linux
+    scancode -= 8;
+#endif
     QVariantMap sendpacket;
     sendpacket.insert("type", KEYUPEVENT);
     sendpacket.insert("scancode", scancode);
